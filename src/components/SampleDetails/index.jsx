@@ -26,11 +26,16 @@ export default function SampleDetails({ ...restProps }) {
     },
   });
 
+  const [input, setInput] = useState(sampleDetails.name || "");
+  const [suggestions, setSuggestions] = useState([]);
+  
+  const names = ['Vivek Gupta', 'Vimal', 'Vikrant', 'Vicky', 'Vasundhara', 'Vivekansh']; // List of names to suggest
+
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
     CO: "C/o cannot be empty!",
     dateOfTest: "All date field should be filled",
-    reference: "reference cannot be empty!",
+    reference: "Reference cannot be empty!",
   };
 
   const checkValidity = (e) => {
@@ -49,27 +54,60 @@ export default function SampleDetails({ ...restProps }) {
 
   const onInputChange = (e) => {
     checkValidity(e);
+    const { id, value } = e.target;
+    if (id === 'name') {
+      setInput(value); // Update input field for name
+      if (value) {
+        // Filter names based on user input
+        const filteredNames = names.filter((name) =>
+          name.toLowerCase().startsWith(value.toLowerCase())
+        );
+        setSuggestions(filteredNames); // Set suggestions
+      } else {
+        setSuggestions([]); // Clear suggestions if input is empty
+      }
+    }
     dispatch({
       type: "updateSampleDetails",
-      payload: { ...sampleDetails, [e.target.id]: e.target.value },
+      payload: { ...sampleDetails, [id]: value },
     });
   };
 
+  const handleSuggestionClick = (name) => {
+    setInput(name); // Set the input value to the clicked suggestion
+    setSuggestions([]); // Clear the suggestions list
+    dispatch({
+      type: "updateSampleDetails",
+      payload: { ...sampleDetails, name: name }, // Update the sampleDetails with the selected name
+    });
+  };
 
   return (
     <section className={styles.container} {...restProps}>
       <h2 className="text--md">Sample Details</h2>
       <form className={styles["form-container"]}>
-        <Inputfield
-          name="first-name"
-          label="Supplied by M/s"
-          value={sampleDetails.name}
-          placeholder="Enter Supplied by M/s"
-          id="name"
-          error={isValid.name.status}
-          errorMessage={isValid.name.message}
-          onChange={onInputChange}
-        />
+        <div className={styles["input-group"]}>
+          <Inputfield
+            name="first-name"
+            label="Supplied by M/s"
+            value={input}
+            placeholder="Enter Supplied by M/s"
+            id="name"
+            error={isValid.name.status}
+            errorMessage={isValid.name.message}
+            onChange={onInputChange}
+          />
+          {suggestions.length > 0 && (
+            <ul className={styles.suggestions}>
+              {suggestions.map((suggestion, index) => (
+                <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <Inputfield
           name="C/o:"
           label="C/o:"

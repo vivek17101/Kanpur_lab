@@ -128,12 +128,12 @@ export default function Report() {
           <View style={styles.sampleDetails}>
             <View>
               <Text>Supplied by M/s: {sampleDetails.name}</Text>
-              <Text>C/o: {sampleDetails.CO}</Text>
               <Text style={styles["mt-1"]}>
                 Date of Test: {sampleDetails.dateOfTest}
               </Text>
             </View>
             <View>
+            <Text>C/o: {sampleDetails.CO}</Text>
               <Text style={styles["mt-1"]}>
               Nature of Sample: {sampleDetails.reference}
               </Text>
