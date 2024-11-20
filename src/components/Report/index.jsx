@@ -51,7 +51,15 @@ export default function Report() {
       marginBottom: 20,
     },
     title: {
-      fontSize: 24,
+      fontSize: 22,
+      fontWeight: 700,
+      textAlign: "center",
+    },
+    subtitleContainer: {
+      marginBottom: 20,
+    },
+    subtitle: {
+      fontSize: 18,
       fontWeight: 700,
       textAlign: "center",
     },
@@ -94,6 +102,11 @@ export default function Report() {
       fontSize: 16,
       padding: "8px",
     },
+    Note: {
+      fontSize: 14,
+      fontWeight: 700,
+      textAlign: "Start",
+    },
   });
 
   return (
@@ -105,19 +118,24 @@ export default function Report() {
       >
         <Page size="A4" style={styles.page}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Laboratory Name</Text>
+            <Text style={styles.title}>KANPUR LABORATORY
+            CONSULTANT & ANALYST</Text>
+          </View>
+          <View style={styles.subtitleContainer}>
+            <Text style={styles.subtitle}>Gali No. 19, Peoda Road, Bypass, KAITHAL-136027 (Hry)</Text>
+            <Text style={styles.subtitle}>M: 94161-37706, 79881-87028, 93063-59224</Text>
           </View>
           <View style={styles.sampleDetails}>
             <View>
-              <Text>Name: {sampleDetails.name}</Text>
+              <Text>Supplied by M/s: {sampleDetails.name}</Text>
+              <Text>C/o: {sampleDetails.CO}</Text>
               <Text style={styles["mt-1"]}>
                 Date of Test: {sampleDetails.dateOfTest}
               </Text>
             </View>
             <View>
-              <Text>Sex/ Age: {sampleDetails.sexAndAge}</Text>
               <Text style={styles["mt-1"]}>
-                reference: {sampleDetails.reference}
+              Nature of Sample: {sampleDetails.reference}
               </Text>
             </View>
           </View>
@@ -150,6 +168,9 @@ export default function Report() {
                 </View>
               </View>
             ))}
+          </View>
+          <View style={styles.Note}>
+            <Text style={styles.Note}>Note: Sample will be re-analyzed only within TEN Days after that SAMPLE WILL be destroyed.</Text>
           </View>
         </Page>
       </Document>

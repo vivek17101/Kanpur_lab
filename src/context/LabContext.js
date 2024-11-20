@@ -29,7 +29,7 @@ export default function LabProvider({ children }) {
 
 const reducer = function (state, action) {
   switch (action.type) {
-    case "updatePatientDetails": {
+    case "updateSampleDetails": {
       return { ...state, sampleDetails: action.payload };
     }
 

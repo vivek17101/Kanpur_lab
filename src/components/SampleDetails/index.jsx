@@ -4,7 +4,7 @@ import Inputfield from "../Inputfield";
 
 import styles from "./Sample.module.css";
 
-export default function PatientDetails({ ...restProps }) {
+export default function SampleDetails({ ...restProps }) {
   const { sampleDetails } = useContext(LabContext);
   const dispatch = useContext(LabDispatchContext);
   const [isValid, setIsValid] = useState({
@@ -12,7 +12,7 @@ export default function PatientDetails({ ...restProps }) {
       status: null,
       message: "",
     },
-    sexAndAge: {
+    CO: {
       status: null,
       message: "",
     },
@@ -28,7 +28,7 @@ export default function PatientDetails({ ...restProps }) {
 
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
-    sexAndAge: "Sex And Age cannot be empty!",
+    CO: "C/o cannot be empty!",
     dateOfTest: "All date field should be filled",
     reference: "reference cannot be empty!",
   };
@@ -50,28 +50,11 @@ export default function PatientDetails({ ...restProps }) {
   const onInputChange = (e) => {
     checkValidity(e);
     dispatch({
-      type: "updatePatientDetails",
+      type: "updateSampleDetails",
       payload: { ...sampleDetails, [e.target.id]: e.target.value },
     });
   };
 
-  const onSexAndInputChange = (e) => {
-    const currentInputValue = sampleDetails.sexAndAge;
-    const currentInputValueLength = sampleDetails.sexAndAge.length;
-    let value = e.target.value;
-    checkValidity(e);
-    if (currentInputValueLength === 0) {
-      value = `${e.target.value.toUpperCase()} / `;
-    } else if (e.target.value.length === 2) {
-      value = `${currentInputValue} / ${e.target.value.slice(1)}`;
-    } else if (e.target.value.length > 2 && e.target.value.length <= 4) {
-      value = currentInputValue[0];
-    }
-    dispatch({
-      type: "updatePatientDetails",
-      payload: { ...sampleDetails, [e.target.id]: value },
-    });
-  };
 
   return (
     <section className={styles.container} {...restProps}>
@@ -88,14 +71,14 @@ export default function PatientDetails({ ...restProps }) {
           onChange={onInputChange}
         />
         <Inputfield
-          name="sex-age"
-          label="Sex/Age"
-          value={sampleDetails.sexAndAge}
-          placeholder="Enter M or F / Age"
-          id="sexAndAge"
-          error={isValid.sexAndAge.status}
-          errorMessage={isValid.sexAndAge.message}
-          onChange={onSexAndInputChange}
+          name="C/o:"
+          label="C/o:"
+          value={sampleDetails.CO}
+          placeholder="Enter C/o:"
+          id="CO"
+          error={isValid.CO.status}
+          errorMessage={isValid.CO.message}
+          onChange={onInputChange}
         />
         <Inputfield
           type="date"

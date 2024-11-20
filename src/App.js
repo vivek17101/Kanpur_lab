@@ -1,5 +1,5 @@
 import Header from "./components/Header";
-import PatientDetails from "./components/SampleDetails";
+import SampleDetails from "./components/SampleDetails";
 import Footer from "./components/Footer";
 import TestDetails from "./components/TestDetails";
 import AddTest from "./components/AddTest";
@@ -48,7 +48,7 @@ function App() {
         </FlexBox>
         {currentStep === 1 && (
           <>
-            <PatientDetails style={{ "--mb": 10 }} />
+            <SampleDetails style={{ "--mb": 10 }} />
             <TestDetails />
           </>
         )}
