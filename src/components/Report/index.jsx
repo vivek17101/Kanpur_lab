@@ -30,11 +30,6 @@ Font.register({
 const styles = StyleSheet.create({
   viewer: {
     width: "100%",
-    height:
-      window.innerHeight -
-      (document.getElementById("header").offsetHeight +
-        document.getElementById("footer").offsetHeight +
-        100),
   },
   page: {
     padding: "18px 24px",
@@ -195,6 +190,10 @@ function LineField({ label, value, width = "100%" }) {
 export default function Report() {
   const { sampleDetails, selectedTests } = useContext(LabContext);
 
+  const headerHeight = document.getElementById("header")?.offsetHeight || 0;
+  const footerHeight = document.getElementById("footer")?.offsetHeight || 0;
+  const viewerHeight = Math.max(window.innerHeight - (headerHeight + footerHeight + 100), 320);
+
   const selectedByName = useMemo(() => {
     const map = {};
     selectedTests.forEach((item) => {
@@ -214,7 +213,7 @@ export default function Report() {
   );
 
   return (
-    <PDFViewer style={styles.viewer}>
+    <PDFViewer style={[styles.viewer, { height: viewerHeight }]}>
       <Document
         title={`${sampleDetails.name.split(" ").join("")}_${
           sampleDetails.dateOfTest
