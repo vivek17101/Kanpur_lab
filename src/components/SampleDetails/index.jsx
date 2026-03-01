@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { LabContext, LabDispatchContext } from "../../context/LabContext";
-import Inputfield from "../Inputfield";
+import InputField from "../InputField";
 
 import styles from "./Sample.module.css";
 
@@ -87,7 +87,7 @@ export default function SampleDetails({ ...restProps }) {
       <h2 className="text--md">Sample Details</h2>
       <form className={styles["form-container"]}>
         <div className={styles["input-group"]}>
-          <Inputfield
+          <InputField
             name="first-name"
             label="Supplied by M/s"
             value={input}
@@ -108,7 +108,7 @@ export default function SampleDetails({ ...restProps }) {
           )}
         </div>
 
-        <Inputfield
+        <InputField
           name="C/o:"
           label="C/o:"
           value={sampleDetails.CO}
@@ -118,7 +118,7 @@ export default function SampleDetails({ ...restProps }) {
           errorMessage={isValid.CO.message}
           onChange={onInputChange}
         />
-        <Inputfield
+        <InputField
           type="date"
           name="date-of-test"
           label="Date Of Test"
@@ -128,7 +128,7 @@ export default function SampleDetails({ ...restProps }) {
           errorMessage={isValid.dateOfTest.message}
           onChange={onInputChange}
         />
-        <Inputfield
+        <InputField
           name="Nature of Sample"
           label="Nature of Sample"
           value={sampleDetails.reference}

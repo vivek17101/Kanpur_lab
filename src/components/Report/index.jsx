@@ -9,7 +9,7 @@ import {
 } from "@react-pdf/renderer";
 import { useContext, useMemo } from "react";
 import { LabContext } from "../../context/LabContext";
-import labData from "../../data/data";
+import labData from "../../data/labData";
 
 Font.register({
   family: "Ubuntu",
