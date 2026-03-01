@@ -1,6 +1,7 @@
 import React from 'react'
-import styles from './Inputfield.module.css';
-export default function Inputfield({ name, isCondensed = false, isGhost = false, label, value, placeholder, wrapClassName = "", error=false, errorMessage="",...restProps }) {
+import styles from './InputField.module.css';
+
+export default function InputField({ name, isCondensed = false, isGhost = false, label, value, placeholder, wrapClassName = "", error=false, errorMessage="",...restProps }) {
 
     const isCondensedClassName = isCondensed ? styles["condensed"] : '';
     const isGhostClassName = isGhost ? styles['ghost'] : '';

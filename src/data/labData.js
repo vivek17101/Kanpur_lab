@@ -1,4 +1,4 @@
-const data = [
+const labData = [
   {
     id: 1,
     name: "F.F.A (Oleic Acid%)",
@@ -64,4 +64,4 @@ const data = [
   },
   ];
 
-export default data;
+export default labData;

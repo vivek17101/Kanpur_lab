@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import Button, { ButtonLabel } from "../Button";
-import Checkbox from "../CheckBox";
-import Inputfield from "../Inputfield";
+import Checkbox from "../Checkbox";
+import InputField from "../InputField";
 import style from "./AddTest.module.css";
 import { v4 as uuidv4 } from "uuid";
 import { LabContext, LabDispatchContext } from "../../context/LabContext";
@@ -75,7 +75,7 @@ export default function AddTest() {
           </svg>
         </header>
         <div className={style.modalBody}>
-          <Inputfield
+          <InputField
             name="test-search-input"
             isCondensed={true}
             isGhost={true}

@@ -1,5 +1,5 @@
 import { createContext, useReducer } from "react";
-import labData from "../data/data";
+import labData from "../data/labData";
 export const LabContext = createContext(null);
 export const LabDispatchContext = createContext(null);
 const initialData = {
