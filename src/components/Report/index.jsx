@@ -7,107 +7,211 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
-import { useContext } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useContext, useMemo } from "react";
 import { LabContext } from "../../context/LabContext";
+import labData from "../../data/data";
+
+Font.register({
+  family: "Ubuntu",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCs6KVjbNBYlgoKcg72nU6AF7xm.woff2",
+      fontStyle: "normal",
+      fontWeight: "normal",
+    },
+    {
+      src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCv6KVjbNBYlgoCxCvjvWyNPYZvg7UI.woff2",
+      fontStyle: "normal",
+      fontWeight: "bold",
+    },
+  ],
+});
+
+const styles = StyleSheet.create({
+  viewer: {
+    width: "100%",
+    height:
+      window.innerHeight -
+      (document.getElementById("header").offsetHeight +
+        document.getElementById("footer").offsetHeight +
+        100),
+  },
+  page: {
+    padding: "18px 24px",
+    fontFamily: "Ubuntu",
+    fontSize: 11,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  topText: {
+    fontSize: 11,
+    fontWeight: 700,
+  },
+  phoneBlock: {
+    textAlign: "right",
+    fontSize: 10,
+    lineHeight: 1.3,
+    fontWeight: 700,
+  },
+  brandBox: {
+    border: "2px solid #c01717",
+    backgroundColor: "#c01717",
+    marginTop: 4,
+    marginBottom: 6,
+    paddingVertical: 3,
+  },
+  brandText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 28,
+    fontWeight: 700,
+    letterSpacing: 1,
+  },
+  consultant: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 2,
+  },
+  address: {
+    textAlign: "center",
+    color: "#b12a2a",
+    fontSize: 13,
+    fontWeight: 700,
+    marginBottom: 12,
+  },
+  dottedLineRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: 700,
+    marginRight: 4,
+  },
+  fillLine: {
+    borderBottom: "1px dotted #000",
+    minHeight: 16,
+    justifyContent: "flex-end",
+    paddingBottom: 2,
+  },
+  fillText: {
+    fontSize: 11,
+    paddingHorizontal: 2,
+  },
+  splitGap: {
+    width: 12,
+  },
+  table: {
+    border: "1px solid #000",
+    marginVertical: 10,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottom: "1px solid #000",
+  },
+  noBottomBorder: {
+    borderBottom: 0,
+  },
+  col: {
+    padding: 6,
+    justifyContent: "center",
+  },
+  colWithBorder: {
+    borderLeft: "1px solid #000",
+  },
+  colTitle: {
+    fontWeight: 700,
+    fontSize: 11,
+  },
+  colSubTitle: {
+    fontSize: 10,
+    color: "#b12a2a",
+    fontWeight: 700,
+  },
+  testsBlock: {
+    marginTop: 4,
+  },
+  testRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginBottom: 7,
+  },
+  testName: {
+    width: "49%",
+    fontSize: 11,
+  },
+  testValueLine: {
+    borderBottom: "1px dotted #000",
+    minHeight: 14,
+    width: "51%",
+    justifyContent: "flex-end",
+    paddingBottom: 1,
+  },
+  noteBox: {
+    marginTop: 12,
+    backgroundColor: "#b31212",
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  noteText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
+    textAlign: "center",
+  },
+  footerRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  hindiText: {
+    width: "72%",
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  chemistText: {
+    fontSize: 16,
+    fontWeight: 700,
+  },
+});
+
+function LineField({ label, value, width = "100%" }) {
+  return (
+    <View style={[styles.dottedLineRow, { width }]}> 
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.fillLine, { flexGrow: 1 }]}> 
+        <Text style={styles.fillText}>{value || ""}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function Report() {
   const { sampleDetails, selectedTests } = useContext(LabContext);
 
-  Font.register({
-    family: "Ubuntu",
-    src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCs6KVjbNBYlgoKcg72nU6AF7xm.woff2",
-  });
+  const selectedByName = useMemo(() => {
+    const map = {};
+    selectedTests.forEach((item) => {
+      map[item.name] = item;
+    });
+    return map;
+  }, [selectedTests]);
 
-  Font.register({
-    family: "Roboto",
-    fonts: [
-      {
-        src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCs6KVjbNBYlgoKcg72nU6AF7xm.woff2",
-        fontStyle: "normal",
-        fontWeight: "normal",
-      },
-      {
-        src: "https://fonts.gstatic.com/s/ubuntu/v20/4iCv6KVjbNBYlgoCxCvjvWyNPYZvg7UI.woff2",
-        fontStyle: "normal",
-        fontWeight: "bold",
-      },
-    ],
-  });
-
-  const styles = StyleSheet.create({
-    viewer: {
-      width: "100%",
-      height:
-        window.innerHeight -
-        (document.getElementById("header").offsetHeight +
-          document.getElementById("footer").offsetHeight +
-          100),
-    },
-    page: {
-      padding: "20px 28px",
-      fontFamily: "Ubuntu",
-    },
-    titleContainer: {
-      marginBottom: 20,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: 700,
-      textAlign: "center",
-    },
-    subtitleContainer: {
-      marginBottom: 20,
-    },
-    subtitle: {
-      fontSize: 18,
-      fontWeight: 700,
-      textAlign: "center",
-    },
-    sampleDetails: {
-      fontSize: 16,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginTop: 20,
-    },
-    report: {
-      marginTop: 20,
-      borderTop: "1px solid black",
-      borderLeft: "1px solid black",
-      borderRight: "1px solid black",
-    },
-    row: {
-      flexDirection: "row",
-      borderBottom: "1px solid black",
-    },
-    testNameCol: {
-      flexGrow: 1,
-      width: 100 % -250,
-      fontSize: 16,
-      padding: "8px",
-    },
-    ValueCol: {
-      minWidth: 100,
-      width: 100,
-      flexShrink: 0,
-      borderLeft: "1px solid black",
-      borderRight: "1px solid black",
-      fontSize: 16,
-      padding: "8px",
-    },
-    normalValue: {
-      minWidth: 150,
-      width: 150,
-      flexShrink: 0,
-      fontSize: 16,
-      padding: "8px",
-    },
-    Note: {
-      fontSize: 14,
-      fontWeight: 700,
-      textAlign: "Start",
-    },
-  });
+  const testsForReport = useMemo(
+    () =>
+      labData.map((test) => ({
+        ...test,
+        value: selectedByName[test.name]?.value || "",
+        unit: selectedByName[test.name]?.unit || test.unit || "",
+      })),
+    [selectedByName]
+  );
 
   return (
     <PDFViewer style={styles.viewer}>
@@ -117,60 +221,93 @@ export default function Report() {
         }`}
       >
         <Page size="A4" style={styles.page}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>KANPUR LABORATORY
-            CONSULTANT & ANALYST</Text>
+          <View style={styles.topRow}>
+            <Text style={styles.topText}>Test Report</Text>
+            <Text style={styles.phoneBlock}>M. 94161-37706{"\n"}M. 79881-87028{"\n"}M. 93063-59224</Text>
           </View>
-          <View style={styles.subtitleContainer}>
-            <Text style={styles.subtitle}>Gali No. 19, Peoda Road, Bypass, KAITHAL-136027 (Hry)</Text>
-            <Text style={styles.subtitle}>M: 94161-37706, 79881-87028, 93063-59224</Text>
+
+          <View style={styles.brandBox}>
+            <Text style={styles.brandText}>KANPUR LABORATORY</Text>
           </View>
-          <View style={styles.sampleDetails}>
-            <View>
-              <Text>Supplied by M/s: {sampleDetails.name}</Text>
-              <Text style={styles["mt-1"]}>
-                Date of Test: {sampleDetails.dateOfTest}
-              </Text>
+          <Text style={styles.consultant}>CONSULTANT & ANALYST</Text>
+          <Text style={styles.address}>Gali No. 19, Peoda Road, Bypass, KAITHAL-136027 (Hry)</Text>
+
+          <LineField label="Supplied by M/s." value={sampleDetails.name} />
+
+          <View style={styles.dottedLineRow}>
+            <LineField label="C/o." value={sampleDetails.CO} width="52%" />
+            <View style={styles.splitGap} />
+            <LineField label="Nature of Sample" value={sampleDetails.reference} width="46%" />
+          </View>
+
+          <LineField label="To M/s." value={sampleDetails.name} />
+
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <View style={[styles.col, { width: "34%" }]}>
+                <Text style={styles.colTitle}>Result of Analysis</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text style={[styles.colTitle, { textAlign: "center", color: "#b12a2a" }]}>AS IT IS</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text style={[styles.colSubTitle, { textAlign: "center" }]}>Sample Not Drawn By Kanpur Laboratory</Text>
+              </View>
             </View>
-            <View>
-            <Text>C/o: {sampleDetails.CO}</Text>
-              <Text style={styles["mt-1"]}>
-              Nature of Sample: {sampleDetails.reference}
-              </Text>
+
+            <View style={styles.tableRow}>
+              <View style={[styles.col, { width: "34%" }]}>
+                <Text>Code No./S.No..........................</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text>Date of Seal..........................</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text>Received on ..........................</Text>
+              </View>
+            </View>
+
+            <View style={[styles.tableRow, styles.noBottomBorder]}>
+              <View style={[styles.col, { width: "34%" }]}>
+                <Text>Lorry No. ..........................</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text>Bags ............ Wt. ............</Text>
+              </View>
+              <View style={[styles.col, styles.colWithBorder, { width: "33%" }]}>
+                <Text>Con. of Sample ............</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.report}>
-            <View style={styles.row}>
-              <View style={styles.testNameCol}>
-                <Text>Test</Text>
-              </View>
-              <View style={styles.ValueCol}>
-                <Text>Value</Text>
-              </View>
-              <View style={styles.normalValue}>
-                <Text>Normal Values</Text>
-              </View>
-            </View>
-            {selectedTests.map((test) => (
-              <View style={styles.row} key={uuidv4()}>
-                <View style={styles.testNameCol}>
-                  <Text>{test.name}</Text>
-                </View>
-                <View style={styles.ValueCol}>
-                  <Text>{`${test.value} ${test.unit}`}</Text>
-                </View>
-                <View style={styles.normalValue}>
-                  {Array.isArray(test.referenceValue) ? (
-                    test.referenceValue.map((test) => <Text>{test}</Text>)
-                  ) : (
-                    <Text>{test.referenceValue}</Text>
-                  )}
+
+          <View style={styles.testsBlock}>
+            {testsForReport.map((test) => (
+              <View style={styles.testRow} key={test.id}>
+                <Text style={styles.testName}>{test.name}</Text>
+                <View style={styles.testValueLine}>
+                  <Text style={styles.fillText}>{test.value ? `${test.value}${test.unit ? ` ${test.unit}` : ""}` : ""}</Text>
                 </View>
               </View>
             ))}
+            <View style={styles.testRow}>
+              <Text style={styles.testName}>Opinion</Text>
+              <View style={styles.testValueLine} />
+            </View>
+            <View style={styles.testRow}>
+              <Text style={styles.testName}>Fee Charged Rs.</Text>
+              <View style={styles.testValueLine} />
+            </View>
           </View>
-          <View style={styles.Note}>
-            <Text style={styles.Note}>Note: Sample will be re-analyzed only within TEN Days after that SAMPLE WILL be destroyed.</Text>
+
+          <View style={styles.noteBox}>
+            <Text style={styles.noteText}>
+              Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
+            </Text>
+          </View>
+
+          <View style={styles.footerRow}>
+            <Text style={styles.hindiText}>अन्यायपूर्वक कमाया हुआ धन हमारे काम आ जाये यह नियम नहीं परन्तु उसका दण्ड, भोगना पड़ेगा - यह नियम है।</Text>
+            <Text style={styles.chemistText}>CHEMIST</Text>
           </View>
         </Page>
       </Document>
