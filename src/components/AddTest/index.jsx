@@ -3,7 +3,6 @@ import Button, { ButtonLabel } from "../Button";
 import Checkbox from "../Checkbox";
 import InputField from "../InputField";
 import style from "./AddTest.module.css";
-import { v4 as uuidv4 } from "uuid";
 import { LabContext, LabDispatchContext } from "../../context/LabContext";
 export default function AddTest() {
   const [seachText, setSearchText] = useState("");
@@ -25,7 +24,7 @@ export default function AddTest() {
       <li
         className={`${style.test} ${test.isSelected ? style.selected : ""}`}
         onClick={() => onTestClickHandler(test.id)}
-        key={uuidv4()}
+        key={test.id}
       >
         <span>{test.name}</span>
         <Checkbox checked={test.isSelected} />

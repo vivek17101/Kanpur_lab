@@ -1,72 +1,63 @@
 import React, { useContext, useState } from "react";
 import { LabContext, LabDispatchContext } from "../../context/LabContext";
 import InputField from "../InputField";
-
-import styles from "./Sample.module.css";
+import styles from "./SampleDetails.module.css";
 
 export default function SampleDetails({ ...restProps }) {
   const { sampleDetails } = useContext(LabContext);
   const dispatch = useContext(LabDispatchContext);
+
   const [isValid, setIsValid] = useState({
-    name: {
-      status: null,
-      message: "",
-    },
-    CO: {
-      status: null,
-      message: "",
-    },
-    dateOfTest: {
-      status: null,
-      message: "",
-    },
-    reference: {
-      status: null,
-      message: "",
-    },
+    name: { status: null, message: "" },
+    CO: { status: null, message: "" },
+    dateOfTest: { status: null, message: "" },
+    reference: { status: null, message: "" },
   });
 
-  const [input, setInput] = useState(sampleDetails.name || "");
   const [suggestions, setSuggestions] = useState([]);
-  
-  const names = ['Vivek Gupta', 'Vimal', 'Vikrant', 'Vicky', 'Vasundhara', 'Vivekansh']; // List of names to suggest
+
+  const names = [
+    "Vivek Gupta",
+    "Vimal",
+    "Vikrant",
+    "Vicky",
+    "Vasundhara",
+    "Vivekansh",
+  ];
 
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
     CO: "C/o cannot be empty!",
-    dateOfTest: "All date field should be filled",
-    reference: "Reference cannot be empty!",
+    dateOfTest: "Date field should be filled",
+    reference: "Nature of Sample cannot be empty!",
   };
 
-  const checkValidity = (e) => {
-    if (e.target.value.length === 0) {
-      setIsValid({
-        ...isValid,
-        [e.target.id]: {
-          status: true,
-          message: errorMessages[e.target.id],
-        },
-      });
+  const checkValidity = (id, value) => {
+    if (value.length === 0) {
+      setIsValid((prev) => ({
+        ...prev,
+        [id]: { status: true, message: errorMessages[id] },
+      }));
     } else {
-      setIsValid({ ...isValid, [e.target.id]: { status: false } });
+      setIsValid((prev) => ({ ...prev, [id]: { status: false } }));
     }
   };
 
   const onInputChange = (e) => {
-    checkValidity(e);
     const { id, value } = e.target;
-    if (id === 'name') {
-      setInput(value); // Update input field for name
+    checkValidity(id, value);
+
+    if (id === "name") {
       if (value) {
-        // Filter names based on user input
         const filteredNames = names.filter((name) =>
           name.toLowerCase().startsWith(value.toLowerCase())
         );
-        setSuggestions(filteredNames); // Set suggestions
+        setSuggestions(filteredNames);
       } else {
-        setSuggestions([]); // Clear suggestions if input is empty
+        setSuggestions([]);
       }
     }
+
     dispatch({
       type: "updateSampleDetails",
       payload: { ...sampleDetails, [id]: value },
@@ -74,12 +65,12 @@ export default function SampleDetails({ ...restProps }) {
   };
 
   const handleSuggestionClick = (name) => {
-    setInput(name); // Set the input value to the clicked suggestion
-    setSuggestions([]); // Clear the suggestions list
+    setSuggestions([]);
     dispatch({
       type: "updateSampleDetails",
-      payload: { ...sampleDetails, name: name }, // Update the sampleDetails with the selected name
+      payload: { ...sampleDetails, name },
     });
+    setIsValid((prev) => ({ ...prev, name: { status: false } }));
   };
 
   return (
@@ -90,7 +81,7 @@ export default function SampleDetails({ ...restProps }) {
           <InputField
             name="first-name"
             label="Supplied by M/s"
-            value={input}
+            value={sampleDetails.name}
             placeholder="Enter Supplied by M/s"
             id="name"
             error={isValid.name.status}

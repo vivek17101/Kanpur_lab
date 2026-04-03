@@ -1,12 +1,12 @@
 import { createContext, useReducer } from "react";
-import labData from "../data/labData";
+import labData from "../data/labTests";
 export const LabContext = createContext(null);
 export const LabDispatchContext = createContext(null);
 const initialData = {
-  labName: "Laboratory",
+  labName: "Kanpur Laboratory",
   sampleDetails: {
     name: "",
-    sexAndAge: "",
+    CO: "",
     dateOfTest: new Date().toISOString().split("T")[0],
     reference: "",
   },

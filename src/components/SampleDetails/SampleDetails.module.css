@@ -30,3 +30,19 @@
 .form-container > *:nth-child(n+3) {
     margin-top: 32px;
 }
+
+.helperText,
+.errorText {
+    float: left;
+    width: 100%;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.helperText {
+    color: var(--tertiary-color);
+}
+
+.errorText {
+    color: #b42318;
+}

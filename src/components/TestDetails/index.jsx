@@ -1,6 +1,5 @@
 import React, { useContext, useState } from "react";
 import Button from "../Button";
-import { v4 as uuidv4 } from "uuid";
 
 import style from "./TestDetails.module.css";
 import { LabContext, LabDispatchContext } from "../../context/LabContext";
@@ -19,7 +18,17 @@ export default function TestDetails({ ...restProps }) {
     const [value, setValue] = useState(data.value);
 
     const onInputChange = (e) => {
-      setValue(e.target.value);
+      const newValue = e.target.value;
+      setValue(newValue);
+
+      const updatedTests = tests.map((test) =>
+        test.id === data.id ? { ...test, value: newValue } : test
+      );
+
+      dispatch({
+        type: "updateSelectedTestValue",
+        payload: updatedTests,
+      });
     };
 
     const deleteBtnHandler = (id) => {
@@ -43,7 +52,7 @@ export default function TestDetails({ ...restProps }) {
         <td>
           {Array.isArray(data.referenceValue)
             ? data.referenceValue.map((value, index) => (
-                <p key={uuidv4()}>{value}</p>
+                <p key={`${data.id}-${index}`}>{value}</p>
               ))
             : data.referenceValue}
           <Button
@@ -98,7 +107,7 @@ export default function TestDetails({ ...restProps }) {
                   value={test.value}
                   unit={test.unit}
                   referenceValue={test.referenceValue}
-                  key={uuidv4()}
+                  key={test.id}
                   data={test}
                 />
               ))

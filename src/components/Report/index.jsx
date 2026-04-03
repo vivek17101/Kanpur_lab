@@ -9,7 +9,7 @@ import {
 } from "@react-pdf/renderer";
 import { useContext, useMemo } from "react";
 import { LabContext } from "../../context/LabContext";
-import labData from "../../data/labData";
+import labData from "../../data/labTests";
 
 Font.register({
   family: "Ubuntu",
@@ -28,9 +28,6 @@ Font.register({
 });
 
 const styles = StyleSheet.create({
-  viewer: {
-    width: "100%",
-  },
   page: {
     padding: "18px 24px",
     fontFamily: "Ubuntu",
@@ -213,9 +210,9 @@ export default function Report() {
   );
 
   return (
-    <PDFViewer style={[styles.viewer, { height: viewerHeight }]}>
+    <PDFViewer style={{ width: "100%", height: viewerHeight, border: "none" }}>
       <Document
-        title={`${sampleDetails.name.split(" ").join("")}_${
+        title={`${(sampleDetails.name || "Report").split(" ").join("")}_${
           sampleDetails.dateOfTest
         }`}
       >
@@ -305,7 +302,7 @@ export default function Report() {
           </View>
 
           <View style={styles.footerRow}>
-            <Text style={styles.hindiText}>अन्यायपूर्वक कमाया हुआ धन हमारे काम आ जाये यह नियम नहीं परन्तु उसका दण्ड, भोगना पड़ेगा - यह नियम है।</Text>
+            <Text style={styles.hindiText}>Any unfairly earned money may support our work, but facing its consequences remains inevitable.</Text>
             <Text style={styles.chemistText}>CHEMIST</Text>
           </View>
         </Page>

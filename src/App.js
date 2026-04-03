@@ -16,7 +16,7 @@ function App() {
 
   return (
     <div className="App">
-      <Header title="Kanpur Lab" />
+      <Header title="Chemical Analysis Lab" />
       <main className="container main" style={{ "--mt": 10, "--mb": 10 }}>
         <FlexBox as="header" align="center" style={{ "--mb": 10 }}>
           {currentStep === 2 && (

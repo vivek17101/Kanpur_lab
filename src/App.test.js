@@ -2,12 +2,11 @@ import { render, screen } from '@testing-library/react';
 import App from './App';
 import LabProvider from './context/LabContext';
 
-test('renders create report heading by default', () => {
+test('renders chemical analysis header', () => {
   render(
     <LabProvider>
       <App />
     </LabProvider>
   );
-
-  expect(screen.getByRole('heading', { name: /create report/i })).toBeInTheDocument();
+  expect(screen.getByText(/chemical analysis lab/i)).toBeInTheDocument();
 });
