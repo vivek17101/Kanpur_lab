@@ -10,6 +10,8 @@ export default function SampleDetails({ ...restProps }) {
   const [isValid, setIsValid] = useState({
     name: { status: null, message: "" },
     CO: { status: null, message: "" },
+    toMs: { status: null, message: "" },
+    dated: { status: null, message: "" },
     dateOfTest: { status: null, message: "" },
     reference: { status: null, message: "" },
   });
@@ -28,6 +30,8 @@ export default function SampleDetails({ ...restProps }) {
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
     CO: "C/o cannot be empty!",
+    toMs: "To M/s cannot be empty!",
+    dated: "Dated field should be filled",
     dateOfTest: "Date field should be filled",
     reference: "Nature of Sample cannot be empty!",
   };
@@ -117,6 +121,26 @@ export default function SampleDetails({ ...restProps }) {
           id="dateOfTest"
           error={isValid.dateOfTest.status}
           errorMessage={isValid.dateOfTest.message}
+          onChange={onInputChange}
+        />
+        <InputField
+          name="to-ms"
+          label="To M/s"
+          value={sampleDetails.toMs}
+          placeholder="Enter To M/s"
+          id="toMs"
+          error={isValid.toMs.status}
+          errorMessage={isValid.toMs.message}
+          onChange={onInputChange}
+        />
+        <InputField
+          type="date"
+          name="dated"
+          label="Dated"
+          value={sampleDetails.dated}
+          id="dated"
+          error={isValid.dated.status}
+          errorMessage={isValid.dated.message}
           onChange={onInputChange}
         />
         <InputField

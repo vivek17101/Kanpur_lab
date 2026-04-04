@@ -7,6 +7,8 @@ const initialData = {
   sampleDetails: {
     name: "",
     CO: "",
+    toMs: "",
+    dated: new Date().toISOString().split("T")[0],
     dateOfTest: new Date().toISOString().split("T")[0],
     reference: "",
   },
