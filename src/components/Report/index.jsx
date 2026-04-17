@@ -7,8 +7,7 @@ import {
   Document,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { useContext, useMemo, useState, useEffect } from "react";
-import { LabContext } from "../../context/LabContext";
+import { useMemo, useState, useEffect } from "react";
 import labData from "../../data/labTests";
 
 const RED    = "#CC0000";
@@ -87,6 +86,7 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
   }
 
   return {
+    reportNumber: sample.reportNumber || "",
     supplierName: sample.supplierName || "",
     CO: sample.CO || "",
     toMs: sample.toMs || "",
@@ -94,6 +94,10 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
     dateOfSeal: formatDate(sample.dateOfSeal),
     dateReceived: formatDate(sample.dateReceived),
     sampleReference: sample.sampleReference || "",
+    lorryNo: sample.lorryNo || "",
+    bags: sample.bags || "",
+    weight: sample.weight || "",
+    conditionOfSample: sample.conditionOfSample || "",
     tests: Array.isArray(sample.tests) ? sample.tests : fallbackTests,
   };
 }
@@ -136,7 +140,7 @@ export function ReportDocument({ reportData }) {
   ];
 
   return (
-    <Document title={`${(reportData.supplierName || "Report").split(" ").join("")}_${reportData.dated}`}>
+    <Document title={`${(reportData.reportNumber || reportData.supplierName || "Report").split(" ").join("")}_${reportData.dated}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.outerBorder}>
           <View style={styles.innerBorder}>
@@ -165,6 +169,7 @@ export function ReportDocument({ reportData }) {
             <Text style={styles.address}>
               Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
             </Text>
+            <DotField label="Report No." value={reportData.reportNumber} />
 
             {/* Field rows */}
             <DotField label="Supplied by M/s." value={reportData.supplierName} />
@@ -183,14 +188,14 @@ export function ReportDocument({ reportData }) {
                 <View style={styles.col2}><Text style={styles.colSubTitle}>Sample Not Drawn By Kanpur Laboratory</Text></View>
               </View>
               <View style={styles.tableSubRow}>
-                <View style={styles.col0}><Text style={styles.subText}>Code No./S.No. {reportData.sampleReference || ".........................."}</Text></View>
+                <View style={styles.col0}><Text style={styles.subText}>Code No./S.No. {reportData.reportNumber || ".........................."}</Text></View>
                 <View style={styles.col1}><Text style={styles.subText}>Date of Seal {reportData.dateOfSeal || ".........................."}</Text></View>
                 <View style={styles.col2}><Text style={styles.subText}>Received on {reportData.dateReceived || ".........................."}</Text></View>
               </View>
               <View style={[styles.tableSubRow, { borderBottom: 0 }]}>
-                <View style={styles.col0}><Text style={styles.subText}>Lorry No. ..........................</Text></View>
-                <View style={styles.col1}><Text style={styles.subText}>Bags ............ Wt. ............</Text></View>
-                <View style={styles.col2}><Text style={styles.subText}>Con. of Sample ............</Text></View>
+                <View style={styles.col0}><Text style={styles.subText}>Lorry No. {reportData.lorryNo || ".........................."}</Text></View>
+                <View style={styles.col1}><Text style={styles.subText}>Bags {reportData.bags || "............"} Wt. {reportData.weight || "............"}</Text></View>
+                <View style={styles.col2}><Text style={styles.subText}>Con. of Sample {reportData.conditionOfSample || "............"}</Text></View>
               </View>
             </View>
 
@@ -241,7 +246,7 @@ export function ReportDownloadLink({ reportData, children }) {
   return (
     <PDFDownloadLink
       document={<ReportDocument reportData={reportData} />}
-      fileName={`${(reportData.supplierName || "sample-report").replace(/\s+/g, "-")}.pdf`}
+      fileName={`${(reportData.reportNumber || reportData.supplierName || "sample-report").replace(/[\s/]+/g, "-")}.pdf`}
     >
       {children}
     </PDFDownloadLink>
@@ -249,7 +254,6 @@ export function ReportDownloadLink({ reportData, children }) {
 }
 
 export default function Report({ sample }) {
-  const { sampleDetails, selectedTests } = useContext(LabContext);
   const [viewerHeight, setViewerHeight] = useState(500);
 
   useEffect(() => {
@@ -260,21 +264,12 @@ export default function Report({ sample }) {
   }, []);
 
   const reportData = useMemo(() => {
-    if (sample) {
-      return getReportDataFromSample(sample, selectedTests);
-    }
+    return getReportDataFromSample(sample);
+  }, [sample]);
 
-    return {
-      supplierName: sampleDetails.name,
-      CO: sampleDetails.CO,
-      toMs: sampleDetails.toMs,
-      dated: sampleDetails.dated,
-      dateOfSeal: "",
-      dateReceived: "",
-      sampleReference: sampleDetails.reference,
-      tests: selectedTests,
-    };
-  }, [sample, sampleDetails, selectedTests]);
+  if (!reportData) {
+    return null;
+  }
 
   return (
     <PDFViewer style={{ width: "100%", height: viewerHeight, border: "none" }}>

@@ -6,6 +6,7 @@ import {
   deleteSample,
   getSample,
   getSamples,
+  getSampleStats,
   updateSample,
 } from "../../services/sampleApi";
 import Button, { ButtonLabel } from "../Button";
@@ -19,9 +20,14 @@ import styles from "./SampleRegister.module.css";
 const emptyForm = {
   supplierName: "",
   CO: "",
+  toMs: "",
   sampleReference: "",
   dateOfSeal: "",
   dateReceived: new Date().toISOString().split("T")[0],
+  lorryNo: "",
+  bags: "",
+  weight: "",
+  conditionOfSample: "",
 };
 
 function formatDate(date) {
@@ -55,10 +61,19 @@ function normalizeTests(sampleTests = []) {
 export default function SampleRegister() {
   const [form, setForm] = useState(emptyForm);
   const [samples, setSamples] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    Pending: 0,
+    Tested: 0,
+    Reported: 0,
+  });
   const [selectedSample, setSelectedSample] = useState(null);
+  const [sampleFields, setSampleFields] = useState(emptyForm);
   const [testRows, setTestRows] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [view, setView] = useState("list");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -69,14 +84,19 @@ export default function SampleRegister() {
     setError("");
 
     try {
-      const data = await getSamples({ search, status: statusFilter });
+      const filterParams = { search, status: statusFilter, startDate, endDate };
+      const [data, summary] = await Promise.all([
+        getSamples(filterParams),
+        getSampleStats({ search, startDate, endDate }),
+      ]);
       setSamples(data);
+      setStats(summary);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [endDate, search, startDate, statusFilter]);
 
   useEffect(() => {
     loadSamples();
@@ -92,6 +112,13 @@ export default function SampleRegister() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setStartDate("");
+    setEndDate("");
+  };
+
   const handleCreateSample = async (event) => {
     event.preventDefault();
     setMessage("");
@@ -102,6 +129,18 @@ export default function SampleRegister() {
       setForm(emptyForm);
       setMessage("Sample entry saved.");
       setSelectedSample(createdSample);
+      setSampleFields({
+        supplierName: createdSample.supplierName || "",
+        CO: createdSample.CO || "",
+        toMs: createdSample.toMs || "",
+        sampleReference: createdSample.sampleReference || "",
+        dateOfSeal: createdSample.dateOfSeal ? createdSample.dateOfSeal.split("T")[0] : "",
+        dateReceived: createdSample.dateReceived ? createdSample.dateReceived.split("T")[0] : "",
+        lorryNo: createdSample.lorryNo || "",
+        bags: createdSample.bags || "",
+        weight: createdSample.weight || "",
+        conditionOfSample: createdSample.conditionOfSample || "",
+      });
       setTestRows(normalizeTests(createdSample.tests));
       setView("tests");
       await loadSamples();
@@ -117,6 +156,18 @@ export default function SampleRegister() {
     try {
       const sample = await getSample(id);
       setSelectedSample(sample);
+      setSampleFields({
+        supplierName: sample.supplierName || "",
+        CO: sample.CO || "",
+        toMs: sample.toMs || "",
+        sampleReference: sample.sampleReference || "",
+        dateOfSeal: sample.dateOfSeal ? sample.dateOfSeal.split("T")[0] : "",
+        dateReceived: sample.dateReceived ? sample.dateReceived.split("T")[0] : "",
+        lorryNo: sample.lorryNo || "",
+        bags: sample.bags || "",
+        weight: sample.weight || "",
+        conditionOfSample: sample.conditionOfSample || "",
+      });
       setTestRows(normalizeTests(sample.tests));
       setView(nextView);
     } catch (err) {
@@ -130,6 +181,29 @@ export default function SampleRegister() {
         itemIndex === index ? { ...test, [field]: value } : test
       )
     );
+  };
+
+  const handleSampleFieldChange = (event) => {
+    const { name, value } = event.target;
+    setSampleFields((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSaveSampleFields = async () => {
+    if (!selectedSample) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const updatedSample = await updateSample(selectedSample._id, sampleFields);
+      setSelectedSample(updatedSample);
+      setMessage("Sample details saved.");
+      await loadSamples();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const handleAddCustomTest = () => {
@@ -212,14 +286,14 @@ export default function SampleRegister() {
       return;
     }
 
-    const fileName = `${(reportData.supplierName || "sample-report").replace(/\s+/g, "-")}.pdf`;
+    const fileName = `${(reportData.reportNumber || reportData.supplierName || "sample-report").replace(/[\s/]+/g, "-")}.pdf`;
     const blob = await pdf(<ReportDocument reportData={reportData} />).toBlob();
     const file = new File([blob], fileName, { type: "application/pdf" });
 
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         title: "Kanpur Laboratory Report",
-        text: `Test report for ${reportData.supplierName}`,
+        text: `Test report ${reportData.reportNumber || ""} for ${reportData.supplierName}`.trim(),
         files: [file],
       });
       await handleMarkReported();
@@ -235,7 +309,7 @@ export default function SampleRegister() {
 
     window.open(
       `https://wa.me/?text=${encodeURIComponent(
-        `Kanpur Laboratory report generated for ${reportData.supplierName}. Please attach the downloaded PDF.`
+        `Kanpur Laboratory report ${reportData.reportNumber || ""} generated for ${reportData.supplierName}. Please attach the downloaded PDF.`
       )}`,
       "_blank",
       "noopener,noreferrer"
@@ -263,6 +337,27 @@ export default function SampleRegister() {
       {message && <p className={styles.message}>{message}</p>}
       {error && <p className={styles.error}>{error}</p>}
 
+      {view === "list" && (
+        <section className={styles.statsGrid}>
+          <article className={styles.statCard}>
+            <span>Total Samples</span>
+            <strong>{stats.total}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Pending</span>
+            <strong>{stats.Pending}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Tested</span>
+            <strong>{stats.Tested}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Reported</span>
+            <strong>{stats.Reported}</strong>
+          </article>
+        </section>
+      )}
+
       {view === "entry" && (
         <section className={styles.panel}>
           <div className={styles.panelHeader}>
@@ -280,6 +375,10 @@ export default function SampleRegister() {
                 <input name="CO" value={form.CO} onChange={handleFormChange} />
               </label>
               <label className={styles.field}>
+                <span>To M/s</span>
+                <input name="toMs" value={form.toMs} onChange={handleFormChange} />
+              </label>
+              <label className={styles.field}>
                 <span>Sample Reference</span>
                 <input name="sampleReference" value={form.sampleReference} onChange={handleFormChange} required />
               </label>
@@ -290,6 +389,22 @@ export default function SampleRegister() {
               <label className={styles.field}>
                 <span>Date Received</span>
                 <input type="date" name="dateReceived" value={form.dateReceived} onChange={handleFormChange} required />
+              </label>
+              <label className={styles.field}>
+                <span>Lorry No.</span>
+                <input name="lorryNo" value={form.lorryNo} onChange={handleFormChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Bags</span>
+                <input name="bags" value={form.bags} onChange={handleFormChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Weight</span>
+                <input name="weight" value={form.weight} onChange={handleFormChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Condition of Sample</span>
+                <input name="conditionOfSample" value={form.conditionOfSample} onChange={handleFormChange} />
               </label>
             </div>
             <div className={styles.actions}>
@@ -308,7 +423,7 @@ export default function SampleRegister() {
             <div className={styles.toolbarActions}>
               <label className={styles.field}>
                 <span>Search</span>
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Supplier, reference, C/o" />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Report no., supplier, reference" />
               </label>
               <label className={styles.field}>
                 <span>Status</span>
@@ -319,12 +434,26 @@ export default function SampleRegister() {
                   <option value="Reported">Reported</option>
                 </select>
               </label>
+              <label className={styles.field}>
+                <span>From</span>
+                <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+              </label>
+              <label className={styles.field}>
+                <span>To</span>
+                <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+              </label>
+              <div className={styles.filterButton}>
+                <Button size="md" variant="secondary" onClick={clearFilters}>
+                  <ButtonLabel label="Clear Filters" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th>Report No.</th>
                   <th>Supplier</th>
                   <th>Reference</th>
                   <th>Received Date</th>
@@ -334,12 +463,13 @@ export default function SampleRegister() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan="5">Loading samples...</td></tr>
+                  <tr><td colSpan="6">Loading samples...</td></tr>
                 ) : samples.length === 0 ? (
-                  <tr><td colSpan="5">No samples found.</td></tr>
+                  <tr><td colSpan="6">No samples found.</td></tr>
                 ) : (
                   samples.map((sample) => (
                     <tr key={sample._id}>
+                      <td>{sample.reportNumber || "-"}</td>
                       <td>{sample.supplierName}</td>
                       <td>{sample.sampleReference}</td>
                       <td>{formatDate(sample.dateReceived)}</td>
@@ -371,11 +501,61 @@ export default function SampleRegister() {
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">Test Result Entry</h3>
-              <p className={styles.muted}>{selectedSample.supplierName} / {selectedSample.sampleReference}</p>
+              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
             </div>
             <Button variant="secondary" onClick={() => setView("list")}>
               <ButtonLabel label="Back to List" />
             </Button>
+          </div>
+          <div className={styles.detailEditor}>
+            <h4 className="text--default fw-700">Sample / Report Details</h4>
+            <div className={styles.grid}>
+              <label className={styles.field}>
+                <span>Supplier Name</span>
+                <input name="supplierName" value={sampleFields.supplierName} onChange={handleSampleFieldChange} required />
+              </label>
+              <label className={styles.field}>
+                <span>C/o</span>
+                <input name="CO" value={sampleFields.CO} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>To M/s</span>
+                <input name="toMs" value={sampleFields.toMs} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Sample Reference</span>
+                <input name="sampleReference" value={sampleFields.sampleReference} onChange={handleSampleFieldChange} required />
+              </label>
+              <label className={styles.field}>
+                <span>Date of Seal</span>
+                <input type="date" name="dateOfSeal" value={sampleFields.dateOfSeal} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Date Received</span>
+                <input type="date" name="dateReceived" value={sampleFields.dateReceived} onChange={handleSampleFieldChange} required />
+              </label>
+              <label className={styles.field}>
+                <span>Lorry No.</span>
+                <input name="lorryNo" value={sampleFields.lorryNo} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Bags</span>
+                <input name="bags" value={sampleFields.bags} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Weight</span>
+                <input name="weight" value={sampleFields.weight} onChange={handleSampleFieldChange} />
+              </label>
+              <label className={styles.field}>
+                <span>Condition of Sample</span>
+                <input name="conditionOfSample" value={sampleFields.conditionOfSample} onChange={handleSampleFieldChange} />
+              </label>
+            </div>
+            <div className={styles.actions}>
+              <Button variant="secondary" onClick={handleSaveSampleFields}>
+                <ButtonLabel label="Save Sample Details" />
+              </Button>
+            </div>
           </div>
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
@@ -429,7 +609,7 @@ export default function SampleRegister() {
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">PDF Report</h3>
-              <p className={styles.muted}>{selectedSample.supplierName} / {selectedSample.sampleReference}</p>
+              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
             </div>
             <Button variant="secondary" onClick={() => setView("list")}>
               <ButtonLabel label="Back to List" />

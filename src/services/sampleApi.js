@@ -44,6 +44,14 @@ export function getSamples(params = {}) {
   return request(`/samples${queryString ? `?${queryString}` : ""}`);
 }
 
+export function getSampleStats(params = {}) {
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value)
+  );
+  const queryString = query.toString();
+  return request(`/samples/stats/summary${queryString ? `?${queryString}` : ""}`);
+}
+
 export function getSample(id) {
   return request(`/samples/${id}`);
 }

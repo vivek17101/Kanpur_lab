@@ -1,4 +1,7 @@
+const Counter = require("../models/Counter");
 const Sample = require("../models/Sample");
+
+const REPORT_PREFIX = "KL";
 
 function getStatusFromTests(tests = [], fallback = "Pending") {
   if (fallback === "Reported") {
@@ -10,15 +13,82 @@ function getStatusFromTests(tests = [], fallback = "Pending") {
     : "Pending";
 }
 
+function getDateRangeFilter(startDate, endDate) {
+  const range = {};
+
+  if (startDate) {
+    range.$gte = new Date(startDate);
+  }
+
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    range.$lte = end;
+  }
+
+  return Object.keys(range).length > 0 ? range : null;
+}
+
+function buildSampleFilter(query) {
+  const { search = "", status = "", startDate = "", endDate = "" } = query;
+  const filter = {};
+  const dateRange = getDateRangeFilter(startDate, endDate);
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (dateRange) {
+    filter.dateReceived = dateRange;
+  }
+
+  if (search) {
+    filter.$or = [
+      { reportNumber: { $regex: search, $options: "i" } },
+      { supplierName: { $regex: search, $options: "i" } },
+      { sampleReference: { $regex: search, $options: "i" } },
+      { CO: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  return filter;
+}
+
+async function getNextReportNumber(dateReceived) {
+  const year = dateReceived
+    ? new Date(dateReceived).getFullYear()
+    : new Date().getFullYear();
+  const key = `sample-report-${year}`;
+  const counter = await Counter.findOneAndUpdate(
+    { key },
+    { $inc: { sequence: 1 } },
+    { new: true, upsert: true }
+  );
+  const paddedSequence = String(counter.sequence).padStart(4, "0");
+
+  return {
+    reportNumber: `${REPORT_PREFIX}/${year}/${paddedSequence}`,
+    reportYear: year,
+    reportSequence: counter.sequence,
+  };
+}
+
 exports.createSample = async (req, res, next) => {
   try {
+    const reportMeta = await getNextReportNumber(req.body.dateReceived);
     const sample = await Sample.create({
+      ...reportMeta,
       supplierName: req.body.supplierName,
       CO: req.body.CO,
+      toMs: req.body.toMs,
       sampleReference: req.body.sampleReference,
       dateOfSeal: req.body.dateOfSeal || undefined,
       dateReceived: req.body.dateReceived,
       dateOfTest: req.body.dateOfTest || undefined,
+      lorryNo: req.body.lorryNo,
+      bags: req.body.bags,
+      weight: req.body.weight,
+      conditionOfSample: req.body.conditionOfSample,
       tests: req.body.tests || [],
       status: getStatusFromTests(req.body.tests || [], req.body.status),
     });
@@ -31,23 +101,38 @@ exports.createSample = async (req, res, next) => {
 
 exports.getSamples = async (req, res, next) => {
   try {
-    const { search = "", status = "" } = req.query;
-    const filter = {};
-
-    if (status) {
-      filter.status = status;
-    }
-
-    if (search) {
-      filter.$or = [
-        { supplierName: { $regex: search, $options: "i" } },
-        { sampleReference: { $regex: search, $options: "i" } },
-        { CO: { $regex: search, $options: "i" } },
-      ];
-    }
+    const filter = buildSampleFilter(req.query);
 
     const samples = await Sample.find(filter).sort({ createdAt: -1 });
     res.json(samples);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getSampleStats = async (req, res, next) => {
+  try {
+    const filter = buildSampleFilter({ ...req.query, status: "" });
+    const [total, statusCounts] = await Promise.all([
+      Sample.countDocuments(filter),
+      Sample.aggregate([
+        { $match: filter },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const stats = {
+      total,
+      Pending: 0,
+      Tested: 0,
+      Reported: 0,
+    };
+
+    statusCounts.forEach((item) => {
+      stats[item._id] = item.count;
+    });
+
+    res.json(stats);
   } catch (error) {
     next(error);
   }
