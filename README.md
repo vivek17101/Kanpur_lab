@@ -8,6 +8,8 @@ React + Node.js + Express + MongoDB lab register and PDF reporting app.
 - Automatically assign yearly report numbers such as `KL/2026/0001`.
 - Manage samples in an Excel-like register table.
 - View dashboard counters for total, pending, tested, and reported samples.
+- Export the currently filtered register to CSV or Excel-compatible `.xls`.
+- Use supplier autocomplete from a local supplier master plus previous register entries.
 - Add or update test result values for each sample.
 - Edit report details such as `To M/s`, lorry number, bags, weight, and condition of sample.
 - Generate the existing PDF report layout from saved sample data.
@@ -129,5 +131,7 @@ REACT_APP_API_URL=http://localhost:5000
 - `Sample List` shows supplier, reference, received date, and status.
 - Search supports report number, supplier, reference, and C/o.
 - Date filters narrow the register by received date.
+- `Export CSV` and `Export Excel` download the current filtered register view.
+- Supplier fields use autocomplete suggestions from `src/data/suppliers.js` and loaded sample history.
 - `View / Add Test Results` opens editable sample/report details plus the result-entry grid.
 - `Report` renders the saved sample through the existing PDF layout.

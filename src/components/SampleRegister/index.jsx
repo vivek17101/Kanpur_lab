@@ -1,6 +1,7 @@
 import { pdf } from "@react-pdf/renderer";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import labData from "../../data/labTests";
+import supplierMaster from "../../data/suppliers";
 import {
   createSample,
   deleteSample,
@@ -58,6 +59,53 @@ function normalizeTests(sampleTests = []) {
   return [...baseTests, ...customTests];
 }
 
+function escapeCsvValue(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getRegisterRows(samples) {
+  return samples.map((sample) => ({
+    "Report No.": sample.reportNumber || "",
+    Supplier: sample.supplierName || "",
+    "C/o": sample.CO || "",
+    "To M/s": sample.toMs || "",
+    Reference: sample.sampleReference || "",
+    "Date of Seal": formatDate(sample.dateOfSeal),
+    "Received Date": formatDate(sample.dateReceived),
+    "Date of Test": formatDate(sample.dateOfTest),
+    "Lorry No.": sample.lorryNo || "",
+    Bags: sample.bags || "",
+    Weight: sample.weight || "",
+    "Condition of Sample": sample.conditionOfSample || "",
+    Status: sample.status || "",
+    Tests: Array.isArray(sample.tests)
+      ? sample.tests
+          .filter((test) => test.name || test.value)
+          .map((test) => `${test.name || ""}: ${test.value || ""}${test.unit ? ` ${test.unit}` : ""}`)
+          .join("; ")
+      : "",
+  }));
+}
+
+function downloadFile(content, fileName, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function SampleRegister() {
   const [form, setForm] = useState(emptyForm);
   const [samples, setSamples] = useState([]);
@@ -107,6 +155,12 @@ export default function SampleRegister() {
     [selectedSample]
   );
 
+  const supplierOptions = useMemo(() => {
+    const historicalSuppliers = samples.map((sample) => sample.supplierName);
+    return [...new Set([...supplierMaster, ...historicalSuppliers].filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+  }, [samples]);
+
   const handleFormChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
@@ -117,6 +171,67 @@ export default function SampleRegister() {
     setStatusFilter("");
     setStartDate("");
     setEndDate("");
+  };
+
+  const handleExportCsv = () => {
+    const rows = getRegisterRows(samples);
+
+    if (rows.length === 0) {
+      setMessage("");
+      setError("No samples available to export.");
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+    const csv = [
+      headers.map(escapeCsvValue).join(","),
+      ...rows.map((row) => headers.map((header) => escapeCsvValue(row[header])).join(",")),
+    ].join("\n");
+
+    downloadFile(`\uFEFF${csv}`, `kanpur-lab-register-${new Date().toISOString().split("T")[0]}.csv`, "text/csv;charset=utf-8");
+    setError("");
+    setMessage("CSV export downloaded.");
+  };
+
+  const handleExportExcel = () => {
+    const rows = getRegisterRows(samples);
+
+    if (rows.length === 0) {
+      setMessage("");
+      setError("No samples available to export.");
+      return;
+    }
+
+    const headers = Object.keys(rows[0]);
+    const table = `
+      <table>
+        <thead>
+          <tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map((row) => `<tr>${headers.map((header) => `<td>${escapeHtml(row[header])}</td>`).join("")}</tr>`)
+            .join("")}
+        </tbody>
+      </table>
+    `;
+    const workbook = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            table { border-collapse: collapse; }
+            th, td { border: 1px solid #999; padding: 6px; }
+            th { background: #eef0f5; font-weight: bold; }
+          </style>
+        </head>
+        <body>${table}</body>
+      </html>
+    `;
+
+    downloadFile(workbook, `kanpur-lab-register-${new Date().toISOString().split("T")[0]}.xls`, "application/vnd.ms-excel;charset=utf-8");
+    setError("");
+    setMessage("Excel export downloaded.");
   };
 
   const handleCreateSample = async (event) => {
@@ -365,10 +480,15 @@ export default function SampleRegister() {
             <p className={styles.muted}>Fields mirror the manual register.</p>
           </div>
           <form onSubmit={handleCreateSample}>
+            <datalist id="supplier-master-options">
+              {supplierOptions.map((supplier) => (
+                <option value={supplier} key={supplier} />
+              ))}
+            </datalist>
             <div className={styles.grid}>
               <label className={styles.field}>
                 <span>Supplier Name</span>
-                <input name="supplierName" value={form.supplierName} onChange={handleFormChange} required />
+                <input list="supplier-master-options" name="supplierName" value={form.supplierName} onChange={handleFormChange} required />
               </label>
               <label className={styles.field}>
                 <span>C/o</span>
@@ -447,6 +567,16 @@ export default function SampleRegister() {
                   <ButtonLabel label="Clear Filters" />
                 </Button>
               </div>
+              <div className={styles.filterButton}>
+                <Button size="md" variant="secondary" onClick={handleExportCsv}>
+                  <ButtonLabel label="Export CSV" />
+                </Button>
+              </div>
+              <div className={styles.filterButton}>
+                <Button size="md" variant="secondary" onClick={handleExportExcel}>
+                  <ButtonLabel label="Export Excel" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className={styles.tableWrapper}>
@@ -498,6 +628,11 @@ export default function SampleRegister() {
 
       {view === "tests" && selectedSample && (
         <section className={styles.panel}>
+          <datalist id="supplier-master-options">
+            {supplierOptions.map((supplier) => (
+              <option value={supplier} key={supplier} />
+            ))}
+          </datalist>
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">Test Result Entry</h3>
@@ -512,7 +647,7 @@ export default function SampleRegister() {
             <div className={styles.grid}>
               <label className={styles.field}>
                 <span>Supplier Name</span>
-                <input name="supplierName" value={sampleFields.supplierName} onChange={handleSampleFieldChange} required />
+                <input list="supplier-master-options" name="supplierName" value={sampleFields.supplierName} onChange={handleSampleFieldChange} required />
               </label>
               <label className={styles.field}>
                 <span>C/o</span>
