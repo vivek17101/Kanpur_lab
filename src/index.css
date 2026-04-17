@@ -302,3 +302,34 @@ button {
 	padding: 16px 0;
 	background-color: white;
 }
+
+.app-nav {
+	display: inline-flex;
+	gap: 6px;
+	padding: 6px;
+	margin-bottom: 24px;
+	background: #eef0f5;
+	border-radius: 999px;
+}
+
+.app-nav button {
+	padding: 10px 16px;
+	color: #334155;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	background: transparent;
+	border: 0;
+	border-radius: 999px;
+}
+
+.app-nav button.active {
+	color: #ffffff;
+	background: var(--primary-color);
+	box-shadow: 0 8px 18px rgba(10, 19, 43, 0.18);
+}
+
+.main {
+	min-height: calc(100vh - 90px);
+}

@@ -16,6 +16,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "server": "npm run dev --prefix server",
+    "server:start": "npm start --prefix server",
+    "server:install": "npm install --prefix server",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

@@ -4,8 +4,9 @@ import Footer from "./components/Footer";
 import TestDetails from "./components/TestDetails";
 import AddTest from "./components/AddTest";
 import FlexBox from "./components/FlexBox";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import Report from "./components/Report";
+import SampleRegister from "./components/SampleRegister";
 
 import Button from "./components/Button";
 import { LabContext, LabDispatchContext } from "./context/LabContext";
@@ -13,49 +14,69 @@ import { LabContext, LabDispatchContext } from "./context/LabContext";
 function App() {
   const { isModalOpen, currentStep } = useContext(LabContext);
   const dispatch = useContext(LabDispatchContext);
+  const [activePage, setActivePage] = useState("register");
 
   return (
     <div className="App">
       <Header title="Chemical Analysis Lab" />
       <main className="container main" style={{ "--mt": 10, "--mb": 10 }}>
-        <FlexBox as="header" align="center" style={{ "--mb": 10 }}>
-          {currentStep === 2 && (
-            <Button
-              iconPlacement="only"
-              style={{ "--mr": 5 }}
-              onClick={() => {
-                dispatch({
-                  type: "updateCurrentStep",
-                  payload: currentStep - 1,
-                });
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  opacity="0.9"
-                  d="M15.5 5L8.5 12L15.5 19"
-                  stroke="#FFFFFF"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Button>
-          )}
-          <h2 className="text--lg fw-700 text-center">
-            {currentStep === 2 ? "Generate Report" : "Create Report"}
-          </h2>
-        </FlexBox>
-        {currentStep === 1 && (
+        <nav className="app-nav">
+          <button
+            className={activePage === "register" ? "active" : ""}
+            onClick={() => setActivePage("register")}
+          >
+            Sample Register
+          </button>
+          <button
+            className={activePage === "quick-report" ? "active" : ""}
+            onClick={() => setActivePage("quick-report")}
+          >
+            Quick Report
+          </button>
+        </nav>
+        {activePage === "register" && <SampleRegister />}
+        {activePage === "quick-report" && (
           <>
-            <SampleDetails style={{ "--mb": 10 }} />
-            <TestDetails />
+            <FlexBox as="header" align="center" style={{ "--mb": 10 }}>
+              {currentStep === 2 && (
+                <Button
+                  iconPlacement="only"
+                  style={{ "--mr": 5 }}
+                  onClick={() => {
+                    dispatch({
+                      type: "updateCurrentStep",
+                      payload: currentStep - 1,
+                    });
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      opacity="0.9"
+                      d="M15.5 5L8.5 12L15.5 19"
+                      stroke="#FFFFFF"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Button>
+              )}
+              <h2 className="text--lg fw-700 text-center">
+                {currentStep === 2 ? "Generate Report" : "Create Report"}
+              </h2>
+            </FlexBox>
+            {currentStep === 1 && (
+              <>
+                <SampleDetails style={{ "--mb": 10 }} />
+                <TestDetails />
+              </>
+            )}
+            {currentStep === 2 && <Report />}
           </>
         )}
-        {currentStep === 2 && <Report />}
       </main>
-      {currentStep !== 2 && <Footer />}
-      {isModalOpen && <AddTest />}
+      {activePage === "quick-report" && currentStep !== 2 && <Footer />}
+      {activePage === "quick-report" && isModalOpen && <AddTest />}
     </div>
   );
 }

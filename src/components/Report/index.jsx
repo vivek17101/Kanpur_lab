@@ -1,4 +1,5 @@
 import {
+  PDFDownloadLink,
   PDFViewer,
   Page,
   Text,
@@ -72,6 +73,31 @@ const styles = StyleSheet.create({
   chemistText: { fontSize: 10, fontWeight: "bold" },
 });
 
+function formatDate(date) {
+  if (!date) {
+    return "";
+  }
+
+  return new Date(date).toLocaleDateString("en-IN");
+}
+
+export function getReportDataFromSample(sample, fallbackTests = []) {
+  if (!sample) {
+    return null;
+  }
+
+  return {
+    supplierName: sample.supplierName || "",
+    CO: sample.CO || "",
+    toMs: sample.toMs || "",
+    dated: formatDate(sample.dateOfTest || sample.updatedAt || sample.createdAt),
+    dateOfSeal: formatDate(sample.dateOfSeal),
+    dateReceived: formatDate(sample.dateReceived),
+    sampleReference: sample.sampleReference || "",
+    tests: Array.isArray(sample.tests) ? sample.tests : fallbackTests,
+  };
+}
+
 function DotField({ label, value, width, grow = true }) {
   return (
     <View style={[styles.fieldRow, width ? { width } : {}]}>
@@ -83,7 +109,146 @@ function DotField({ label, value, width, grow = true }) {
   );
 }
 
-export default function Report() {
+export function ReportDocument({ reportData }) {
+  const selectedByName = {};
+  const storedTests = Array.isArray(reportData.tests) ? reportData.tests : [];
+
+  storedTests.forEach((item) => {
+    selectedByName[item.name] = item;
+  });
+
+  const baseRows = labData.map((test) => ({
+    ...test,
+    value: selectedByName[test.name]?.value || "",
+    unit: selectedByName[test.name]?.unit || test.unit || "",
+    referenceValue: selectedByName[test.name]?.referenceValue || test.referenceValue || "",
+  }));
+
+  const customRows = storedTests.filter(
+    (test) => !labData.some((item) => item.name === test.name)
+  );
+
+  const allRows = [
+    ...baseRows,
+    ...customRows,
+    { id: "opinion", name: "Opinion", value: "", unit: "" },
+    { id: "fee", name: "Fee Charged Rs.", value: "", unit: "" },
+  ];
+
+  return (
+    <Document title={`${(reportData.supplierName || "Report").split(" ").join("")}_${reportData.dated}`}>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.outerBorder}>
+          <View style={styles.innerBorder}>
+
+            {/* Header */}
+            <View style={styles.headerRow}>
+              <Text style={styles.testReportTitle}>Test Report</Text>
+              <Text style={styles.phoneBlock}>{"M. 94161-37706\nM. 79881-87028\nM. 93063-59224"}</Text>
+            </View>
+
+            {/* Red banner */}
+            <View style={styles.brandBox}>
+              <Text style={styles.brandText}>KANPUR LABORATORY</Text>
+            </View>
+
+            {/* Consultant + Dated */}
+            <View style={styles.consultantRow}>
+              <Text style={styles.consultantText}>CONSULTANT &amp; ANALYST</Text>
+              <View style={styles.datedRow}>
+                <Text style={styles.datedLabel}>Dated</Text>
+                <Text style={styles.datedValue}>{reportData.dated || ""}</Text>
+              </View>
+            </View>
+
+            {/* Address */}
+            <Text style={styles.address}>
+              Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
+            </Text>
+
+            {/* Field rows */}
+            <DotField label="Supplied by M/s." value={reportData.supplierName} />
+            <View style={styles.fieldRow}>
+              <DotField label="C/o." value={reportData.CO} width="52%" grow={false} />
+              <View style={styles.splitGap} />
+              <DotField label="Nature of Sample:" value={reportData.sampleReference} width="46%" grow={false} />
+            </View>
+            <DotField label="To M/s." value={reportData.toMs} />
+
+            {/* Table */}
+            <View style={styles.table}>
+              <View style={styles.tableHeaderRow}>
+                <View style={styles.col0}><Text style={styles.colTitle}>Result of Analysis</Text></View>
+                <View style={styles.col1}><Text style={styles.colTitleRed}>AS IT IS</Text></View>
+                <View style={styles.col2}><Text style={styles.colSubTitle}>Sample Not Drawn By Kanpur Laboratory</Text></View>
+              </View>
+              <View style={styles.tableSubRow}>
+                <View style={styles.col0}><Text style={styles.subText}>Code No./S.No. {reportData.sampleReference || ".........................."}</Text></View>
+                <View style={styles.col1}><Text style={styles.subText}>Date of Seal {reportData.dateOfSeal || ".........................."}</Text></View>
+                <View style={styles.col2}><Text style={styles.subText}>Received on {reportData.dateReceived || ".........................."}</Text></View>
+              </View>
+              <View style={[styles.tableSubRow, { borderBottom: 0 }]}>
+                <View style={styles.col0}><Text style={styles.subText}>Lorry No. ..........................</Text></View>
+                <View style={styles.col1}><Text style={styles.subText}>Bags ............ Wt. ............</Text></View>
+                <View style={styles.col2}><Text style={styles.subText}>Con. of Sample ............</Text></View>
+              </View>
+            </View>
+
+            {/* Test rows */}
+            {allRows.map((test, i) => (
+              <View key={test.id || test.name} style={[styles.testRow, i % 2 === 0 ? styles.testRowAlt : {}]}>
+                <Text style={styles.testName}>{test.name}</Text>
+                <View style={styles.testValueLine}>
+                  <Text style={styles.testValue}>
+                    {test.value ? `${test.value}${test.unit ? ` ${test.unit}` : ""}` : ""}
+                  </Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Stamp */}
+            <View style={styles.stampWrap}>
+              <View style={styles.stampOuter}>
+                <View style={styles.stampInner}>
+                  <Text style={styles.stampText}>{"KANPUR\nLAB"}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Note bar */}
+            <View style={styles.noteBox}>
+              <Text style={styles.noteText}>
+                Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
+              </Text>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footerRow}>
+              <Text style={styles.hindiText}>
+                {"Unfairly earned money may support our work,\nbut its consequences must still be faced."}
+              </Text>
+              <Text style={styles.chemistText}>CHEMIST</Text>
+            </View>
+
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+export function ReportDownloadLink({ reportData, children }) {
+  return (
+    <PDFDownloadLink
+      document={<ReportDocument reportData={reportData} />}
+      fileName={`${(reportData.supplierName || "sample-report").replace(/\s+/g, "-")}.pdf`}
+    >
+      {children}
+    </PDFDownloadLink>
+  );
+}
+
+export default function Report({ sample }) {
   const { sampleDetails, selectedTests } = useContext(LabContext);
   const [viewerHeight, setViewerHeight] = useState(500);
 
@@ -94,127 +259,26 @@ export default function Report() {
     setViewerHeight(Math.max(window.innerHeight - used, 320));
   }, []);
 
-  const selectedByName = useMemo(() => {
-    const map = {};
-    selectedTests.forEach((item) => { map[item.name] = item; });
-    return map;
-  }, [selectedTests]);
+  const reportData = useMemo(() => {
+    if (sample) {
+      return getReportDataFromSample(sample, selectedTests);
+    }
 
-  const testsForReport = useMemo(
-    () => labData.map((test) => ({
-      ...test,
-      value: selectedByName[test.name]?.value || "",
-      unit: selectedByName[test.name]?.unit || test.unit || "",
-    })),
-    [selectedByName]
-  );
-
-  const allRows = [
-    ...testsForReport,
-    { id: "opinion", name: "Opinion",         value: "", unit: "" },
-    { id: "fee",     name: "Fee Charged Rs.", value: "", unit: "" },
-  ];
+    return {
+      supplierName: sampleDetails.name,
+      CO: sampleDetails.CO,
+      toMs: sampleDetails.toMs,
+      dated: sampleDetails.dated,
+      dateOfSeal: "",
+      dateReceived: "",
+      sampleReference: sampleDetails.reference,
+      tests: selectedTests,
+    };
+  }, [sample, sampleDetails, selectedTests]);
 
   return (
     <PDFViewer style={{ width: "100%", height: viewerHeight, border: "none" }}>
-      <Document title={`${(sampleDetails.name || "Report").split(" ").join("")}_${sampleDetails.dateOfTest}`}>
-        <Page size="A4" style={styles.page}>
-          <View style={styles.outerBorder}>
-            <View style={styles.innerBorder}>
-
-              {/* Header */}
-              <View style={styles.headerRow}>
-                <Text style={styles.testReportTitle}>Test Report</Text>
-                <Text style={styles.phoneBlock}>{"M. 94161-37706\nM. 79881-87028\nM. 93063-59224"}</Text>
-              </View>
-
-              {/* Red banner */}
-              <View style={styles.brandBox}>
-                <Text style={styles.brandText}>KANPUR LABORATORY</Text>
-              </View>
-
-              {/* Consultant + Dated */}
-              <View style={styles.consultantRow}>
-                <Text style={styles.consultantText}>CONSULTANT &amp; ANALYST</Text>
-                <View style={styles.datedRow}>
-                  <Text style={styles.datedLabel}>Dated</Text>
-                  <Text style={styles.datedValue}>{sampleDetails.dated || ""}</Text>
-                </View>
-              </View>
-
-              {/* Address */}
-              <Text style={styles.address}>
-                Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
-              </Text>
-
-              {/* Field rows */}
-              <DotField label="Supplied by M/s." value={sampleDetails.name} />
-              <View style={styles.fieldRow}>
-                <DotField label="C/o." value={sampleDetails.CO} width="52%" grow={false} />
-                <View style={styles.splitGap} />
-                <DotField label="Nature of Sample:" value={sampleDetails.reference} width="46%" grow={false} />
-              </View>
-              <DotField label="To M/s." value={sampleDetails.toMs} />
-
-              {/* Table */}
-              <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
-                  <View style={styles.col0}><Text style={styles.colTitle}>Result of Analysis</Text></View>
-                  <View style={styles.col1}><Text style={styles.colTitleRed}>AS IT IS</Text></View>
-                  <View style={styles.col2}><Text style={styles.colSubTitle}>Sample Not Drawn By Kanpur Laboratory</Text></View>
-                </View>
-                <View style={styles.tableSubRow}>
-                  <View style={styles.col0}><Text style={styles.subText}>Code No./S.No..........................</Text></View>
-                  <View style={styles.col1}><Text style={styles.subText}>Date of Seal..........................</Text></View>
-                  <View style={styles.col2}><Text style={styles.subText}>Received on ..........................</Text></View>
-                </View>
-                <View style={[styles.tableSubRow, { borderBottom: 0 }]}>
-                  <View style={styles.col0}><Text style={styles.subText}>Lorry No. ..........................</Text></View>
-                  <View style={styles.col1}><Text style={styles.subText}>Bags ............ Wt. ............</Text></View>
-                  <View style={styles.col2}><Text style={styles.subText}>Con. of Sample ............</Text></View>
-                </View>
-              </View>
-
-              {/* Test rows */}
-              {allRows.map((test, i) => (
-                <View key={test.id} style={[styles.testRow, i % 2 === 0 ? styles.testRowAlt : {}]}>
-                  <Text style={styles.testName}>{test.name}</Text>
-                  <View style={styles.testValueLine}>
-                    <Text style={styles.testValue}>
-                      {test.value ? `${test.value}${test.unit ? ` ${test.unit}` : ""}` : ""}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-
-              {/* Stamp */}
-              <View style={styles.stampWrap}>
-                <View style={styles.stampOuter}>
-                  <View style={styles.stampInner}>
-                    <Text style={styles.stampText}>{"KANPUR\nLAB"}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Note bar */}
-              <View style={styles.noteBox}>
-                <Text style={styles.noteText}>
-                  Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
-                </Text>
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footerRow}>
-                <Text style={styles.hindiText}>
-                  {"Unfairly earned money may support our work,\nbut its consequences must still be faced."}
-                </Text>
-                <Text style={styles.chemistText}>CHEMIST</Text>
-              </View>
-
-            </View>
-          </View>
-        </Page>
-      </Document>
+      <ReportDocument reportData={reportData} />
     </PDFViewer>
   );
 }
