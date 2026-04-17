@@ -1,7 +1,6 @@
 import { pdf } from "@react-pdf/renderer";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import labData from "../../data/labTests";
-import supplierMaster from "../../data/suppliers";
 import {
   createSample,
   deleteSample,
@@ -10,6 +9,7 @@ import {
   getSampleStats,
   updateSample,
 } from "../../services/sampleApi";
+import { getSuppliers } from "../../services/supplierApi";
 import Button, { ButtonLabel } from "../Button";
 import Report, {
   getReportDataFromSample,
@@ -106,9 +106,24 @@ function downloadFile(content, fileName, type) {
   URL.revokeObjectURL(url);
 }
 
-export default function SampleRegister() {
+function normalizeWhatsAppNumber(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  if (digits.length === 10) {
+    return `91${digits}`;
+  }
+
+  return digits;
+}
+
+export default function SampleRegister({ suppliersVersion = 0 }) {
   const [form, setForm] = useState(emptyForm);
   const [samples, setSamples] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     Pending: 0,
@@ -150,6 +165,19 @@ export default function SampleRegister() {
     loadSamples();
   }, [loadSamples]);
 
+  useEffect(() => {
+    async function loadSuppliers() {
+      try {
+        const data = await getSuppliers();
+        setSuppliers(data);
+      } catch (err) {
+        setSuppliers([]);
+      }
+    }
+
+    loadSuppliers();
+  }, [suppliersVersion]);
+
   const reportData = useMemo(
     () => getReportDataFromSample(selectedSample),
     [selectedSample]
@@ -157,9 +185,25 @@ export default function SampleRegister() {
 
   const supplierOptions = useMemo(() => {
     const historicalSuppliers = samples.map((sample) => sample.supplierName);
-    return [...new Set([...supplierMaster, ...historicalSuppliers].filter(Boolean))]
+    const masterSuppliers = suppliers.map((supplier) => supplier.name);
+    return [...new Set([...masterSuppliers, ...historicalSuppliers].filter(Boolean))]
       .sort((a, b) => a.localeCompare(b));
-  }, [samples]);
+  }, [samples, suppliers]);
+
+  const selectedSupplier = useMemo(() => {
+    if (!selectedSample?.supplierName) {
+      return null;
+    }
+
+    return suppliers.find(
+      (supplier) =>
+        supplier.name.toLowerCase() === selectedSample.supplierName.toLowerCase()
+    );
+  }, [selectedSample, suppliers]);
+
+  const selectedSupplierWhatsApp = normalizeWhatsAppNumber(
+    selectedSupplier?.whatsappNumber
+  );
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
@@ -422,13 +466,12 @@ export default function SampleRegister() {
     link.click();
     URL.revokeObjectURL(url);
 
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(
-        `Kanpur Laboratory report ${reportData.reportNumber || ""} generated for ${reportData.supplierName}. Please attach the downloaded PDF.`
-      )}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    const messageText = `Kanpur Laboratory report ${reportData.reportNumber || ""} generated for ${reportData.supplierName}. Please attach the downloaded PDF.`;
+    const whatsappUrl = selectedSupplierWhatsApp
+      ? `https://wa.me/${selectedSupplierWhatsApp}?text=${encodeURIComponent(messageText)}`
+      : `https://wa.me/?text=${encodeURIComponent(messageText)}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
     await handleMarkReported();
   };
 
@@ -745,6 +788,9 @@ export default function SampleRegister() {
             <div>
               <h3 className="text--md fw-700">PDF Report</h3>
               <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
+              <p className={styles.muted}>
+                WhatsApp: {selectedSupplierWhatsApp ? `+${selectedSupplierWhatsApp}` : "No supplier number saved"}
+              </p>
             </div>
             <Button variant="secondary" onClick={() => setView("list")}>
               <ButtonLabel label="Back to List" />
@@ -761,7 +807,7 @@ export default function SampleRegister() {
               )}
             </ReportDownloadLink>
             <Button variant="secondary" onClick={handleSharePdf}>
-              <ButtonLabel label="Share on WhatsApp" />
+              <ButtonLabel label={selectedSupplierWhatsApp ? "Share to Supplier WhatsApp" : "Share on WhatsApp"} />
             </Button>
           </div>
           <Report sample={selectedSample} />

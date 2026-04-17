@@ -1,33 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-async function request(path, options = {}) {
-  let response;
-
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      ...options,
-    });
-  } catch (error) {
-    throw new Error(
-      `Could not connect to the backend at ${API_BASE_URL}. Start MongoDB and run "npm run server", or set REACT_APP_API_URL to your API server.`
-    );
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || "API request failed");
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
-}
+import { request } from "./apiClient";
 
 export function createSample(sample) {
   return request("/samples", {

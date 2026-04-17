@@ -1,6 +1,8 @@
 const cors = require("cors");
 const express = require("express");
+const authRoutes = require("./routes/authRoutes");
 const sampleRoutes = require("./routes/sampleRoutes");
+const supplierRoutes = require("./routes/supplierRoutes");
 
 const app = express();
 
@@ -15,7 +17,9 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/auth", authRoutes);
 app.use("/samples", sampleRoutes);
+app.use("/suppliers", supplierRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
