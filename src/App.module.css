@@ -1,0 +1,49 @@
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.nav {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  background: #eef0f5;
+  border-radius: 999px;
+}
+
+.nav button {
+  padding: 10px 16px;
+  color: #334155;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+}
+
+.nav button.active {
+  color: #ffffff;
+  background: var(--primary-color);
+  box-shadow: 0 8px 18px rgba(10, 19, 43, 0.18);
+}
+
+.adminBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.loading {
+  padding: 30px;
+  color: #64748b;
+  text-align: center;
+}

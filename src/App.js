@@ -1,82 +1,85 @@
+import { useEffect, useState } from "react";
+import styles from "./App.module.css";
 import Header from "./components/Header";
-import SampleDetails from "./components/SampleDetails";
-import Footer from "./components/Footer";
-import TestDetails from "./components/TestDetails";
-import AddTest from "./components/AddTest";
-import FlexBox from "./components/FlexBox";
-import { useContext, useState } from "react";
-import Report from "./components/Report";
+import Login from "./components/Login";
 import SampleRegister from "./components/SampleRegister";
-
-import Button from "./components/Button";
-import { LabContext, LabDispatchContext } from "./context/LabContext";
+import SupplierManager from "./components/SupplierManager";
+import Button, { ButtonLabel } from "./components/Button";
+import { clearStoredToken, getStoredToken } from "./services/apiClient";
+import { getCurrentAdmin } from "./services/authApi";
 
 function App() {
-  const { isModalOpen, currentStep } = useContext(LabContext);
-  const dispatch = useContext(LabDispatchContext);
+  const [admin, setAdmin] = useState(null);
   const [activePage, setActivePage] = useState("register");
+  const [suppliersVersion, setSuppliersVersion] = useState(0);
+  const [isCheckingSession, setIsCheckingSession] = useState(Boolean(getStoredToken()));
+
+  useEffect(() => {
+    async function restoreSession() {
+      if (!getStoredToken()) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      try {
+        const data = await getCurrentAdmin();
+        setAdmin(data.admin);
+      } catch (error) {
+        clearStoredToken();
+      } finally {
+        setIsCheckingSession(false);
+      }
+    }
+
+    restoreSession();
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredToken();
+    setAdmin(null);
+    setActivePage("register");
+  };
 
   return (
     <div className="App">
       <Header title="Chemical Analysis Lab" />
       <main className="container main" style={{ "--mt": 10, "--mb": 10 }}>
-        <nav className="app-nav">
-          <button
-            className={activePage === "register" ? "active" : ""}
-            onClick={() => setActivePage("register")}
-          >
-            Sample Register
-          </button>
-          <button
-            className={activePage === "quick-report" ? "active" : ""}
-            onClick={() => setActivePage("quick-report")}
-          >
-            Quick Report
-          </button>
-        </nav>
-        {activePage === "register" && <SampleRegister />}
-        {activePage === "quick-report" && (
+        {isCheckingSession ? (
+          <p className={styles.loading}>Checking admin session...</p>
+        ) : !admin ? (
+          <Login onLogin={setAdmin} />
+        ) : (
           <>
-            <FlexBox as="header" align="center" style={{ "--mb": 10 }}>
-              {currentStep === 2 && (
-                <Button
-                  iconPlacement="only"
-                  style={{ "--mr": 5 }}
-                  onClick={() => {
-                    dispatch({
-                      type: "updateCurrentStep",
-                      payload: currentStep - 1,
-                    });
-                  }}
+            <div className={styles.topbar}>
+              <nav className={styles.nav}>
+                <button
+                  className={activePage === "register" ? styles.active : ""}
+                  onClick={() => setActivePage("register")}
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      opacity="0.9"
-                      d="M15.5 5L8.5 12L15.5 19"
-                      stroke="#FFFFFF"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  Sample Register
+                </button>
+                <button
+                  className={activePage === "suppliers" ? styles.active : ""}
+                  onClick={() => setActivePage("suppliers")}
+                >
+                  Supplier Master
+                </button>
+              </nav>
+              <div className={styles.adminBox}>
+                <span>Signed in as {admin.username}</span>
+                <Button size="md" variant="secondary" onClick={handleLogout}>
+                  <ButtonLabel label="Logout" />
                 </Button>
-              )}
-              <h2 className="text--lg fw-700 text-center">
-                {currentStep === 2 ? "Generate Report" : "Create Report"}
-              </h2>
-            </FlexBox>
-            {currentStep === 1 && (
-              <>
-                <SampleDetails style={{ "--mb": 10 }} />
-                <TestDetails />
-              </>
+              </div>
+            </div>
+
+            {activePage === "register" && <SampleRegister suppliersVersion={suppliersVersion} />}
+            {activePage === "suppliers" && (
+              <SupplierManager onSuppliersChanged={() => setSuppliersVersion((version) => version + 1)} />
             )}
-            {currentStep === 2 && <Report />}
           </>
         )}
       </main>
-      {activePage === "quick-report" && currentStep !== 2 && <Footer />}
-      {activePage === "quick-report" && isModalOpen && <AddTest />}
     </div>
   );
 }

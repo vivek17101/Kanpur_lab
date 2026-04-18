@@ -27,12 +27,30 @@ const testSchema = new mongoose.Schema(
 
 const sampleSchema = new mongoose.Schema(
   {
+    reportNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    reportYear: {
+      type: Number,
+      index: true,
+    },
+    reportSequence: {
+      type: Number,
+    },
     supplierName: {
       type: String,
       required: true,
       trim: true,
     },
     CO: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    toMs: {
       type: String,
       default: "",
       trim: true,
@@ -51,6 +69,26 @@ const sampleSchema = new mongoose.Schema(
     },
     dateOfTest: {
       type: Date,
+    },
+    lorryNo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    bags: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    weight: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    conditionOfSample: {
+      type: String,
+      default: "",
+      trim: true,
     },
     tests: {
       type: [testSchema],
