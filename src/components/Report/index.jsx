@@ -130,7 +130,7 @@ const S = {
     fontFamily: "Georgia, serif",
   },
   symbolImg: { width: "36px", height: "36px", objectFit: "contain" },
-  logoImg:   { width: "50px", height: "50px", objectFit: "contain" },
+  logoImg:   { width: "70px", height: "50px", objectFit: "contain" },
   phoneBlock: {
     textAlign: "right",
     fontSize: "8.5px",
