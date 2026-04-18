@@ -1,16 +1,13 @@
 /**
- * Report/index.jsx — html2canvas + jsPDF
- * Install: npm install html2canvas jspdf
+ * Report/index.jsx — html2canvas + jsPDF  (v4 — PNG symbols)
  *
- * FIXES APPLIED:
- * 1. BLANK PDF  → container now uses opacity:0 at left:0 (not visibility:hidden at left:-9999px)
- *                 html2canvas requires the element to be in normal layout flow to paint correctly.
- * 2. LOGO 404  → loadImageAsBase64 now accepts any src (import path, blob URL, or absolute URL).
- *                 Pass your imported logo URL into captureTemplate/generatePDF instead of
- *                 hard-coding "/kanpur_lab_logo.png" which 404s in many deploy setups.
- * 3. CLIPPING  → windowHeight now uses el.scrollHeight instead of fixed 1123.
- * 4. SCROLL    → scrollY: -window.scrollY so captures aren't offset by page scroll position.
- * 5. RENDER WAIT → bumped from 300ms → 600ms for images to fully paint before capture.
+ * CHANGES FROM v3:
+ * ─────────────────────────────────────────────────────────────────────
+ * [SYMBOLS] Removed hand-drawn SWASTIK_SVG / OM_SVG base64 constants
+ * [SYMBOLS] Now imports Swastika_Symbol.png + OM_Symbol.png via bundler
+ * [SYMBOLS] Both converted to base64 on mount via loadImageAsBase64()
+ * [SYMBOLS] swastikSrc / omSrc threaded as props through all render paths
+ * ─────────────────────────────────────────────────────────────────────
  */
 
 import { useMemo, useState, useCallback, useEffect } from "react";
@@ -18,20 +15,16 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import labData from "../../data/labTests";
 
-// ─── Import logo via bundler (resolves correctly in CRA / Vite / Next.js) ────
-// If your logo lives elsewhere, adjust this import path accordingly.
-// Using a bundler import guarantees the correct hashed/resolved URL at all times.
+// ── Import assets via bundler ─────────────────────────────────────────────────
 import kanpurLabLogo from "../../assets/kanpur_lab_logo.png";
-// ─────────────────────────────────────────────────────────────────────────────
+import swastikPng    from "../../assets/Swastika_Symbol.png";
+import omPng         from "../../assets/OM_Symbol.png";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 const RED   = "#CC0000";
 const DKRED = "#990000";
 
-// ─── Logo — load as base64 so html2canvas always captures it ─────────────────
-// Accepts any src string: bundler-imported URL, blob URL, or absolute URL.
-// FIX #2: Previously hard-coded "/kanpur_lab_logo.png" which 404s when the
-//         public folder isn't served at root, or in production builds.
+// ─── Base64 loader ────────────────────────────────────────────────────────────
 async function loadImageAsBase64(src) {
   if (!src) return null;
   return new Promise((resolve) => {
@@ -44,38 +37,12 @@ async function loadImageAsBase64(src) {
       canvas.getContext("2d").drawImage(img, 0, 0);
       resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => resolve(null); // silently skip if missing
+    img.onerror = () => resolve(null);
     img.src = src;
   });
 }
 
-// ─── Inline SVG symbols (no external files needed) ───────────────────────────
-
-const SWASTIK_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g fill="none" stroke="#000" stroke-width="12" stroke-linecap="square">
-    <line x1="50" y1="10" x2="50" y2="90"/>
-    <line x1="10" y1="50" x2="90" y2="50"/>
-    <polyline points="50,10 75,10"/>
-    <polyline points="90,50 90,75"/>
-    <polyline points="50,90 25,90"/>
-    <polyline points="10,50 10,25"/>
-  </g>
-  <circle cx="30" cy="30" r="5" fill="#000"/>
-  <circle cx="70" cy="30" r="5" fill="#000"/>
-  <circle cx="70" cy="70" r="5" fill="#000"/>
-  <circle cx="30" cy="70" r="5" fill="#000"/>
-</svg>
-`)}`;
-
-const OM_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text x="50" y="78" font-family="serif" font-size="80"
-        text-anchor="middle" fill="#CC0000">ॐ</text>
-</svg>
-`)}`;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(date) {
   if (!date) return "";
   return new Date(date).toLocaleDateString("en-IN");
@@ -100,100 +67,225 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
   };
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const S = {
   page: {
     width: "794px",
-    minHeight: "1123px",
+    minHeight: "1083px",
     backgroundColor: "#fff",
-    fontFamily: "'Noto Sans', Arial, sans-serif",
+    fontFamily: "'Noto Sans', 'Mangal', Arial, sans-serif",
     fontSize: "10px",
-    padding: "10px 12px",
+    padding: "14px 16px",
     boxSizing: "border-box",
   },
   outerBorder: {
-    border: "2px solid #000",
-    padding: "6px 8px",
+    border: "2.5px solid #000",
+    padding: "0",
     boxSizing: "border-box",
     position: "relative",
   },
   innerBorder: {
-    border: "0.5px solid #000",
-    padding: "6px 8px",
+    border: "1px solid #000",
+    margin: "4px",
+    padding: "8px 10px",
     position: "relative",
+    boxSizing: "border-box",
   },
+
   watermark: {
     position: "absolute",
-    top: "50%",
+    top: "70%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    opacity: 0.06,
+    opacity: 0.15,
     textAlign: "center",
     pointerEvents: "none",
     zIndex: 0,
     userSelect: "none",
-    whiteSpace: "nowrap",
   },
-  watermarkBanner: {
-    backgroundColor: "#000",
-    color: "#fff",
-    fontSize: "20px",
-    fontWeight: "bold",
-    letterSpacing: "8px",
-    padding: "4px 24px",
-    marginTop: "8px",
-    display: "inline-block",
-  },
+
+  // ── Header ──────────────────────────────────────────────────────────
   headerRow: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: "4px",
+    position: "relative",
+    zIndex: 1,
+  },
+  headerLeft:   { width: "56px", flexShrink: 0 },
+  headerCenter: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "14px",
+  },
+  testReportTitle: {
+    fontSize: "14px",
+    fontWeight: "bold",
+    fontStyle: "italic",
+    fontFamily: "Georgia, serif",
+  },
+  symbolImg: { width: "36px", height: "36px", objectFit: "contain" },
+  logoImg:   { width: "50px", height: "50px", objectFit: "contain" },
+  phoneBlock: {
+    textAlign: "right",
+    fontSize: "8.5px",
+    fontWeight: "bold",
+    lineHeight: "1.8",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
+
+  // ── Brand banner ────────────────────────────────────────────────────
+  brandBox: {
+    backgroundColor: RED,
+    padding: "6px 8px",
+    marginBottom: "5px",
+    marginTop: "4px",
+    textAlign: "center",
+    position: "relative",
+    zIndex: 1,
+  },
+  brandText: {
+    color: "#fff",
+    fontSize: "26px",
+    fontWeight: "900",
+    letterSpacing: "3px",
+    fontFamily: "Impact, 'Arial Black', Arial, sans-serif",
+    WebkitTextStroke: "0.5px rgba(255,255,255,0.4)",
+    textShadow: "1px 1px 0 rgba(0,0,0,0.3)",
+    fontStyle: "italic",
+  },
+
+  // ── Consultant row ──────────────────────────────────────────────────
+  consultantRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
     marginBottom: "2px",
     position: "relative",
     zIndex: 1,
   },
-  headerLeft:   { width: "40px", flexShrink: 0 },
-  headerCenter: { flex: 1, display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: "10px" },
-  testReportTitle: { fontSize: "13px", fontWeight: "bold", fontStyle: "italic" },
-  symbolImg: { width: "28px", height: "28px", objectFit: "contain" },
-  logoImg:   { width: "38px", height: "38px", objectFit: "contain" },
-  phoneBlock: { textAlign: "right", fontSize: "8px", fontWeight: "bold", lineHeight: "1.7", whiteSpace: "nowrap", flexShrink: 0 },
-  brandBox: { backgroundColor: RED, padding: "5px 8px", marginBottom: "4px", marginTop: "3px", textAlign: "center" },
-  brandText: { color: "#fff", fontSize: "22px", fontWeight: "bold", letterSpacing: "2px" },
-  consultantRow: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" },
-  consultantText: { fontSize: "11px", fontWeight: "bold" },
-  datedRow: { display: "flex", alignItems: "baseline", gap: "4px" },
-  datedLabel: { fontSize: "9px", fontWeight: "bold" },
-  datedValue: { fontSize: "9px", borderBottom: "1px dotted #CCCCCC", minWidth: "70px", paddingBottom: "1px" },
-  address: { textAlign: "center", color: RED, fontSize: "9px", fontWeight: "bold", marginBottom: "5px" },
-  fieldRow: { display: "flex", alignItems: "flex-end", marginBottom: "5px", gap: "3px" },
-  fieldLabel: { fontSize: "9.5px", fontWeight: "bold", whiteSpace: "nowrap" },
-  fieldValueLine: { borderBottom: "1px dotted #CCCCCC", flexGrow: 1, minHeight: "13px", paddingBottom: "1px" },
+  consultantText: { fontSize: "11.5px", fontWeight: "bold" },
+  datedRow:       { display: "flex", alignItems: "baseline", gap: "4px" },
+  datedLabel:     { fontSize: "9.5px", fontWeight: "bold" },
+  datedValue: {
+    fontSize: "9.5px",
+    borderBottom: "1px dotted #999",
+    minWidth: "80px",
+    paddingBottom: "1px",
+  },
+  address: {
+    textAlign: "center",
+    color: RED,
+    fontSize: "9.5px",
+    fontWeight: "bold",
+    marginBottom: "6px",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  // ── DotField ────────────────────────────────────────────────────────
+  fieldRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    marginBottom: "6px",
+    gap: "3px",
+    position: "relative",
+    zIndex: 1,
+  },
+  fieldLabel:     { fontSize: "9.5px", fontWeight: "bold", whiteSpace: "nowrap" },
+  fieldValueLine: {
+    borderBottom: "1px dotted #888",
+    flexGrow: 1,
+    minHeight: "14px",
+    paddingBottom: "1px",
+  },
   fieldValue: { fontSize: "9.5px", fontWeight: "bold", color: DKRED },
-  table: { border: "1px solid #000", marginTop: "6px", marginBottom: "2px", position: "relative", zIndex: 1 },
-  tableHeaderRow: { display: "flex", backgroundColor: "#F5F5F5", borderBottom: "0.8px solid #000" },
-  tableSubRow:    { display: "flex", backgroundColor: "#F5F5F5", borderBottom: "0.5px solid #000" },
-  col0: { width: "34%", padding: "3px 5px", fontSize: "8px", boxSizing: "border-box" },
-  col1: { width: "33%", padding: "3px 5px", fontSize: "8px", borderLeft: "0.8px solid #000", borderRight: "0.8px solid #000", boxSizing: "border-box" },
-  col2: { width: "33%", padding: "3px 5px", fontSize: "8px", boxSizing: "border-box" },
-  colTitle:    { fontWeight: "bold", fontSize: "9px" },
-  colTitleRed: { fontWeight: "bold", fontSize: "9px", color: RED, textAlign: "center", display: "block" },
-  colSubTitle: { fontWeight: "bold", fontSize: "7.5px", color: RED, textAlign: "center", display: "block" },
-  testRow:    { display: "flex", alignItems: "flex-end", borderBottom: "0.3px solid #CCCCCC", padding: "2.5px 4px", position: "relative", zIndex: 1 },
-  testRowAlt: { backgroundColor: "#FAFAFA" },
-  testName:   { width: "49%", fontSize: "9px" },
-  testValueLine: { borderBottom: "1px dotted #CCCCCC", width: "51%", minHeight: "13px", paddingBottom: "1px" },
+
+  // ── Table ────────────────────────────────────────────────────────────
+  table: {
+    border: "1px solid #000",
+    marginTop: "6px",
+    marginBottom: "0px",
+    position: "relative",
+    zIndex: 1,
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  tableHeaderRow: {
+    display: "flex",
+    backgroundColor: "transparent",
+    borderBottom: "1px solid #000",
+  },
+  tableSubRow: {
+    display: "flex",
+    backgroundColor: "transparent",
+    borderBottom: "1px solid #000",
+  },
+  col0: { width: "34%", padding: "4px 6px", fontSize: "8.5px", boxSizing: "border-box" },
+  col1: {
+    width: "33%",
+    padding: "4px 6px",
+    fontSize: "8.5px",
+    borderLeft: "1px solid #000",
+    borderRight: "1px solid #000",
+    boxSizing: "border-box",
+  },
+  col2: { width: "33%", padding: "4px 6px", fontSize: "8.5px", boxSizing: "border-box" },
+  colTitle:    { fontWeight: "bold", fontSize: "9.5px" },
+  colTitleRed: { fontWeight: "bold", fontSize: "9.5px", color: RED, textAlign: "center", display: "block" },
+  colSubTitle: { fontWeight: "bold", fontSize: "8px",   color: RED, textAlign: "center", display: "block" },
+
+  // ── Test rows ────────────────────────────────────────────────────────
+  testRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    borderBottom: "0.5px solid #DDDDDD",
+    padding: "3px 6px",
+    position: "relative",
+    zIndex: 1,
+  },
+  testRowAlt: { backgroundColor: "transparent" },
+  testName:   { width: "46%", fontSize: "9px", flexShrink: 0 },
+  testValueLine: {
+    borderBottom: "1px dotted #999",
+    flexGrow: 1,
+    minHeight: "14px",
+    paddingBottom: "1px",
+  },
   testValue: { fontSize: "9px", fontWeight: "bold", color: RED },
-  stampWrap:  { display: "flex", justifyContent: "center", margin: "6px 0", zIndex: 1 },
-  stampOuter: { width: "60px", height: "60px", borderRadius: "50%", border: "1.5px solid #888", display: "flex", alignItems: "center", justifyContent: "center" },
-  stampInner: { width: "48px", height: "48px", borderRadius: "50%", border: "0.8px solid #888", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" },
-  stampText:  { fontSize: "8px", fontWeight: "bold", color: "#555", lineHeight: "1.4" },
-  noteBox:  { backgroundColor: RED, padding: "3px 6px", marginTop: "4px", zIndex: 1 },
-  noteText: { color: "#fff", fontSize: "7.5px", fontWeight: "bold", textAlign: "center" },
-  footerRow:   { marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", zIndex: 1 },
-  hindiText:   { fontSize: "9px", fontStyle: "italic", width: "72%", lineHeight: "1.6" },
-  chemistText: { fontSize: "10px", fontWeight: "bold" },
+
+  // ── Note bar ─────────────────────────────────────────────────────────
+  noteBox: {
+    backgroundColor: RED,
+    padding: "4px 8px",
+    marginTop: "4px",
+    zIndex: 1,
+    position: "relative",
+  },
+  noteText: {
+    color: "#fff",
+    fontSize: "8px",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  // ── Footer ───────────────────────────────────────────────────────────
+  footerRow: {
+    marginTop: "10px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    zIndex: 1,
+    position: "relative",
+  },
+  hindiText:   { fontSize: "9.5px", width: "74%", lineHeight: "1.8" },
+  chemistText: { fontSize: "11px",  fontWeight: "bold" },
 };
 
 // ─── DotField ─────────────────────────────────────────────────────────────────
@@ -209,7 +301,7 @@ function DotField({ label, value, style = {} }) {
 }
 
 // ─── ReportTemplate ───────────────────────────────────────────────────────────
-export function ReportTemplate({ reportData, innerRef, logoSrc }) {
+export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSrc }) {
   const selectedByName = {};
   const storedTests = Array.isArray(reportData.tests) ? reportData.tests : [];
   storedTests.forEach((item) => { selectedByName[item.name] = item; });
@@ -232,22 +324,27 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
       <div style={S.outerBorder}>
         <div style={S.innerBorder}>
 
-          {/* ── Watermark ─────────────────────────────────────────────── */}
+          {/* ── Watermark ──────────────────────────────────────────────── */}
           {logoSrc && (
             <div style={S.watermark}>
-              <img src={logoSrc} alt="" style={{ width: "220px", display: "block" }} />
+              <img src={logoSrc} alt="" style={{ width: "240px", display: "block" }} />
             </div>
           )}
 
-          {/* ── Header ────────────────────────────────────────────────── */}
+          {/* ── Header ─────────────────────────────────────────────────── */}
           <div style={S.headerRow}>
             <div style={S.headerLeft}>
               {logoSrc && <img src={logoSrc} style={S.logoImg} alt="Kanpur Lab" />}
             </div>
             <div style={S.headerCenter}>
-              <img src={SWASTIK_SVG} style={S.symbolImg} alt="swastik" />
+              {/* PNG symbols — base64 loaded via loadImageAsBase64() for html2canvas */}
+              {swastikSrc && (
+                <img src={swastikSrc} style={S.symbolImg} alt="swastik" />
+              )}
               <span style={S.testReportTitle}>Test Report</span>
-              <img src={OM_SVG} style={S.symbolImg} alt="om" />
+              {omSrc && (
+                <img src={omSrc} style={S.symbolImg} alt="om" />
+              )}
             </div>
             <div style={S.phoneBlock}>
               M. 94161-37706<br />
@@ -256,12 +353,12 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
             </div>
           </div>
 
-          {/* ── Red banner ────────────────────────────────────────────── */}
+          {/* ── Brand banner ────────────────────────────────────────────── */}
           <div style={S.brandBox}>
             <span style={S.brandText}>KANPUR LABORATORY</span>
           </div>
 
-          {/* ── Consultant & Dated ────────────────────────────────────── */}
+          {/* ── Consultant & Dated ──────────────────────────────────────── */}
           <div style={S.consultantRow}>
             <span style={S.consultantText}>CONSULTANT &amp; ANALYST</span>
             <div style={S.datedRow}>
@@ -270,21 +367,21 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
             </div>
           </div>
 
-          {/* ── Address ───────────────────────────────────────────────── */}
+          {/* ── Address ─────────────────────────────────────────────────── */}
           <div style={S.address}>
             Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
           </div>
 
-          {/* ── Fields ────────────────────────────────────────────────── */}
+          {/* ── Fields ──────────────────────────────────────────────────── */}
           <DotField label="Report No."       value={reportData.reportNumber} />
           <DotField label="Supplied by M/s." value={reportData.supplierName} />
-          <div style={{ display: "flex", gap: "8px", marginBottom: "5px" }}>
+          <div style={{ display: "flex", gap: "10px", marginBottom: "6px", zIndex: 1, position: "relative" }}>
             <DotField label="C/o."              value={reportData.CO}              style={{ width: "52%", marginBottom: 0 }} />
             <DotField label="Nature of Sample:" value={reportData.sampleReference} style={{ width: "46%", marginBottom: 0 }} />
           </div>
           <DotField label="To M/s." value={reportData.toMs} />
 
-          {/* ── Analysis table ────────────────────────────────────────── */}
+          {/* ── Analysis table ──────────────────────────────────────────── */}
           <div style={S.table}>
             <div style={S.tableHeaderRow}>
               <div style={S.col0}><span style={S.colTitle}>Result of Analysis</span></div>
@@ -303,10 +400,12 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
             </div>
           </div>
 
-          {/* ── Test rows ─────────────────────────────────────────────── */}
+          {/* ── Test rows ───────────────────────────────────────────────── */}
           {allRows.map((test, i) => (
-            <div key={test.id || test.name}
-              style={{ ...S.testRow, ...(i % 2 === 0 ? S.testRowAlt : {}) }}>
+            <div
+              key={test.id || test.name}
+              style={{ ...S.testRow, ...(i % 2 === 0 ? S.testRowAlt : {}) }}
+            >
               <div style={S.testName}>{test.name}</div>
               <div style={S.testValueLine}>
                 <span style={S.testValue}>
@@ -316,23 +415,14 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
             </div>
           ))}
 
-          {/* ── Stamp ─────────────────────────────────────────────────── */}
-          <div style={S.stampWrap}>
-            <div style={S.stampOuter}>
-              <div style={S.stampInner}>
-                <span style={S.stampText}>KANPUR<br />LAB</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Note bar ──────────────────────────────────────────────── */}
+          {/* ── Note bar ────────────────────────────────────────────────── */}
           <div style={S.noteBox}>
             <span style={S.noteText}>
               Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
             </span>
           </div>
 
-          {/* ── Footer ────────────────────────────────────────────────── */}
+          {/* ── Footer ──────────────────────────────────────────────────── */}
           <div style={S.footerRow}>
             <div style={S.hindiText}>
               अन्यायपूर्वक कमाया हुआ धन हमारे काम आ जाए यह नियम नहीं<br />
@@ -347,31 +437,18 @@ export function ReportTemplate({ reportData, innerRef, logoSrc }) {
   );
 }
 
-// ─── captureTemplate — shared capture logic ───────────────────────────────────
-// FIX #1 (blank PDF): container now uses opacity:0 positioned at left:0 top:0.
-//   - visibility:hidden at left:-9999px causes html2canvas to render a blank
-//     white canvas because the element is outside the browser's paint viewport.
-//   - opacity:0 keeps the element fully painted in normal layout flow, so
-//     html2canvas can traverse the DOM and capture every pixel correctly.
-// FIX #2 (logo): logoSrc is now passed in from outside (bundler-resolved import),
-//   instead of being hard-coded as "/kanpur_lab_logo.png" inside this function.
-// FIX #3 (clipping): windowHeight uses el.scrollHeight (actual content height).
-// FIX #4 (scroll offset): scrollY: -window.scrollY corrects for page scroll.
-// FIX #5 (render wait): 600ms instead of 300ms for images to fully paint.
-async function captureTemplate(reportData, logoSrc) {
+// ─── captureTemplate ──────────────────────────────────────────────────────────
+async function captureTemplate(reportData, logoSrc, swastikSrc, omSrc) {
   const container = document.createElement("div");
-
-  // ✅ FIX #1 — opacity:0 + on-screen position lets html2canvas paint correctly
   container.style.cssText = [
     "position:fixed",
     "top:0",
-    "left:0",            // on-screen (was left:-9999px — caused blank canvas)
+    "left:0",
     "width:794px",
-    "opacity:0",         // invisible to user (was visibility:hidden — broke paint)
+    "opacity:0",
     "pointer-events:none",
     "z-index:99999",
   ].join(";");
-
   document.body.appendChild(container);
 
   const { createRoot } = await import("react-dom/client");
@@ -379,9 +456,14 @@ async function captureTemplate(reportData, logoSrc) {
 
   await new Promise((resolve) => {
     root.render(
-      <ReportTemplate reportData={reportData} innerRef={null} logoSrc={logoSrc} />
+      <ReportTemplate
+        reportData={reportData}
+        innerRef={null}
+        logoSrc={logoSrc}
+        swastikSrc={swastikSrc}
+        omSrc={omSrc}
+      />
     );
-    // ✅ FIX #5 — 600ms (was 300ms) gives images time to fully paint
     setTimeout(resolve, 600);
   });
 
@@ -395,9 +477,9 @@ async function captureTemplate(reportData, logoSrc) {
       backgroundColor: "#ffffff",
       logging: false,
       scrollX: 0,
-      scrollY: -window.scrollY, // ✅ FIX #4 — account for page scroll offset
+      scrollY: -window.scrollY,
       windowWidth: 794,
-      windowHeight: el.scrollHeight, // ✅ FIX #3 — actual height, not fixed 1123
+      windowHeight: el.scrollHeight,
     });
 
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
@@ -415,12 +497,9 @@ async function captureTemplate(reportData, logoSrc) {
   }
 }
 
-// ─── generatePDF — save to disk ───────────────────────────────────────────────
-// FIX #2: logoSrc param replaces the internal loadImageAsBase64("/kanpur_lab_logo.png") call.
-// Call this as: generatePDF(reportData, undefined, logoBase64)
-// where logoBase64 = await loadImageAsBase64(kanpurLabLogo)  ← bundler import at top
-export async function generatePDF(reportData, filename, logoSrc) {
-  const doc = await captureTemplate(reportData, logoSrc);
+// ─── generatePDF ──────────────────────────────────────────────────────────────
+export async function generatePDF(reportData, filename, logoSrc, swastikSrc, omSrc) {
+  const doc = await captureTemplate(reportData, logoSrc, swastikSrc, omSrc);
   doc.save(
     filename ||
     `${(reportData.reportNumber || reportData.supplierName || "report")
@@ -428,34 +507,36 @@ export async function generatePDF(reportData, filename, logoSrc) {
   );
 }
 
-// ─── generatePDFBlob — return Blob (for Web Share / WhatsApp) ─────────────────
-export async function generatePDFBlob(reportData, logoSrc) {
-  const doc = await captureTemplate(reportData, logoSrc);
+// ─── generatePDFBlob ──────────────────────────────────────────────────────────
+export async function generatePDFBlob(reportData, logoSrc, swastikSrc, omSrc) {
+  const doc = await captureTemplate(reportData, logoSrc, swastikSrc, omSrc);
   return doc.output("blob");
 }
 
 // ─── ReportDownloadLink ───────────────────────────────────────────────────────
 export function ReportDownloadLink({ reportData, children }) {
-  const [loading, setLoading] = useState(false);
-  // Pre-load logo base64 once when this component mounts
-  const [logoSrc, setLogoSrc] = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [logoSrc,    setLogoSrc]    = useState(null);
+  const [swastikSrc, setSwastikSrc] = useState(null);
+  const [omSrc,      setOmSrc]      = useState(null);
 
   useEffect(() => {
-    // ✅ FIX #2 — use bundler-imported URL, not a hard-coded public path
     loadImageAsBase64(kanpurLabLogo).then(setLogoSrc);
+    loadImageAsBase64(swastikPng).then(setSwastikSrc);
+    loadImageAsBase64(omPng).then(setOmSrc);
   }, []);
 
   const handleClick = useCallback(async () => {
     if (loading) return;
     setLoading(true);
     try {
-      await generatePDF(reportData, undefined, logoSrc);
+      await generatePDF(reportData, undefined, logoSrc, swastikSrc, omSrc);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
       setLoading(false);
     }
-  }, [reportData, loading, logoSrc]);
+  }, [reportData, loading, logoSrc, swastikSrc, omSrc]);
 
   return (
     <span
@@ -469,14 +550,17 @@ export function ReportDownloadLink({ reportData, children }) {
   );
 }
 
-// ─── Default export — preview only ───────────────────────────────────────────
+// ─── Default export — preview ─────────────────────────────────────────────────
 export default function Report({ sample }) {
   const reportData = useMemo(() => getReportDataFromSample(sample), [sample]);
-  const [logoSrc, setLogoSrc] = useState(null);
+  const [logoSrc,    setLogoSrc]    = useState(null);
+  const [swastikSrc, setSwastikSrc] = useState(null);
+  const [omSrc,      setOmSrc]      = useState(null);
 
   useEffect(() => {
-    // ✅ FIX #2 — bundler import, not "/kanpur_lab_logo.png"
     loadImageAsBase64(kanpurLabLogo).then(setLogoSrc);
+    loadImageAsBase64(swastikPng).then(setSwastikSrc);
+    loadImageAsBase64(omPng).then(setOmSrc);
   }, []);
 
   if (!reportData) return null;
@@ -484,7 +568,13 @@ export default function Report({ sample }) {
   return (
     <div style={{ overflowX: "auto", border: "1px solid #ccc", background: "#f0f0f0", padding: "12px" }}>
       <div style={{ transform: "scale(0.85)", transformOrigin: "top left", width: "794px" }}>
-        <ReportTemplate reportData={reportData} innerRef={null} logoSrc={logoSrc} />
+        <ReportTemplate
+          reportData={reportData}
+          innerRef={null}
+          logoSrc={logoSrc}
+          swastikSrc={swastikSrc}
+          omSrc={omSrc}
+        />
       </div>
     </div>
   );
