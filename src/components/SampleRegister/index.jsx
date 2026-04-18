@@ -1,4 +1,3 @@
-import { pdf } from "@react-pdf/renderer";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import labData from "../../data/labTests";
 import {
@@ -13,8 +12,8 @@ import { getSuppliers } from "../../services/supplierApi";
 import Button, { ButtonLabel } from "../Button";
 import Report, {
   getReportDataFromSample,
-  ReportDocument,
   ReportDownloadLink,
+  generatePDFBlob,
 } from "../Report";
 import styles from "./SampleRegister.module.css";
 
@@ -446,7 +445,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     }
 
     const fileName = `${(reportData.reportNumber || reportData.supplierName || "sample-report").replace(/[\s/]+/g, "-")}.pdf`;
-    const blob = await pdf(<ReportDocument reportData={reportData} />).toBlob();
+    const blob = await generatePDFBlob(reportData);
     const file = new File([blob], fileName, { type: "application/pdf" });
 
     if (navigator.canShare?.({ files: [file] })) {
