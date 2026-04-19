@@ -1,24 +1,28 @@
 /**
- * Report/index.jsx — html2canvas + jsPDF  (v4 — PNG symbols)
+ * Report/index.jsx — html2canvas + jsPDF  (v6)
  *
- * CHANGES FROM v3:
+ * CHANGES FROM v5:
  * ─────────────────────────────────────────────────────────────────────
- * [SYMBOLS] Removed hand-drawn SWASTIK_SVG / OM_SVG base64 constants
- * [SYMBOLS] Now imports Swastika_Symbol.png + OM_Symbol.png via bundler
- * [SYMBOLS] Both converted to base64 on mount via loadImageAsBase64()
- * [SYMBOLS] swastikSrc / omSrc threaded as props through all render paths
+ * [FIX]    numberToWords — removed hardcoded " percent" suffix; percent
+ *          word only appended when unit is explicitly "%"
+ * [STYLE]  testValueWords color darkened #555 → #333 for print clarity
+ * [LAYOUT] Opinion & Fee Charged rows visually separated from test rows
+ *          with thicker top border, extra padding, italic label style
+ * [LAYOUT] minHeight 1083px → 1123px + test row padding 3px → 5px +
+ *          flex spacer pushes footer to bottom — fills A4 properly
  * ─────────────────────────────────────────────────────────────────────
  */
-
 import { useMemo, useState, useCallback, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import labData from "../../data/labTests";
 
 // ── Import assets via bundler ─────────────────────────────────────────────────
-import kanpurLabLogo from "../../assets/kanpur_lab_logo.png";
-import swastikPng    from "../../assets/Swastika_Symbol.png";
-import omPng         from "../../assets/OM_Symbol.png";
+import kanpurLabLogo      from "../../assets/kanpur_lab_logo.png";
+import kanpurLabWaterMark from "../../assets/kanpur_lab_WaterMark.png";
+import swastikPng         from "../../assets/Swastika_Symbol.png";
+import omPng              from "../../assets/OM_Symbol.png";
+import chemistSignPng     from "../../assets/chemist_sign.png";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const RED   = "#CC0000";
@@ -48,6 +52,46 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("en-IN");
 }
 
+// ─── Number → English words ───────────────────────────────────────────────────
+const ones   = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+                 "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
+                 "Seventeen","Eighteen","Nineteen"];
+const tens_w = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+const digits  = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine"];
+
+function intToWords(n) {
+  if (n === 0) return "Zero";
+  if (n < 0)   return "Minus " + intToWords(-n);
+  if (n < 20)  return ones[n];
+  if (n < 100) return tens_w[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+  if (n < 1000) return ones[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " + intToWords(n % 100) : "");
+  if (n < 100000) return intToWords(Math.floor(n / 1000)) + " Thousand" + (n % 1000 ? " " + intToWords(n % 1000) : "");
+  return String(n);
+}
+
+// FIX: "percent" only appended when isPercent=true (unit is "%")
+export function numberToWords(value, isPercent = false) {
+  if (value === "" || value === null || value === undefined) return "";
+  const str   = String(value).trim();
+  const match = str.match(/^([+-]?\d+\.?\d*)(.*)$/);
+  if (!match) return str;
+  const numStr = match[1];
+  const num    = parseFloat(numStr);
+  if (isNaN(num)) return str;
+
+  const dotIdx = numStr.indexOf(".");
+  let words;
+  if (dotIdx === -1) {
+    words = intToWords(Math.abs(Math.round(num)));
+  } else {
+    const intPart  = Math.floor(Math.abs(num));
+    const decStr   = numStr.slice(dotIdx + 1);
+    const decWords = decStr.split("").map(d => digits[parseInt(d)]).join(" ");
+    words = intToWords(intPart) + " point " + decWords;
+  }
+  return isPercent ? words + " percent" : words;
+}
+
 export function getReportDataFromSample(sample, fallbackTests = []) {
   if (!sample) return null;
   return {
@@ -71,7 +115,7 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
 const S = {
   page: {
     width: "794px",
-    minHeight: "1083px",
+    minHeight: "1123px",           // FIX: was 1083px — matches A4 at 96dpi
     backgroundColor: "#fff",
     fontFamily: "'Noto Sans', 'Mangal', Arial, sans-serif",
     fontSize: "10px",
@@ -83,6 +127,7 @@ const S = {
     padding: "0",
     boxSizing: "border-box",
     position: "relative",
+    minHeight: "1091px",
   },
   innerBorder: {
     border: "1px solid #000",
@@ -90,14 +135,16 @@ const S = {
     padding: "8px 10px",
     position: "relative",
     boxSizing: "border-box",
+    minHeight: "1079px",
+    display: "flex",               // FIX: flex column so spacer can push footer down
+    flexDirection: "column",
   },
-
   watermark: {
     position: "absolute",
     top: "70%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    opacity: 0.15,
+    opacity: 0.12,
     textAlign: "center",
     pointerEvents: "none",
     zIndex: 0,
@@ -244,21 +291,54 @@ const S = {
   // ── Test rows ────────────────────────────────────────────────────────
   testRow: {
     display: "flex",
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     borderBottom: "0.5px solid #DDDDDD",
-    padding: "3px 6px",
+    padding: "5px 6px",            // FIX: 3px → 5px for better A4 fill
     position: "relative",
     zIndex: 1,
   },
-  testRowAlt: { backgroundColor: "transparent" },
-  testName:   { width: "46%", fontSize: "9px", flexShrink: 0 },
+  testRowAlt:  { backgroundColor: "transparent" },
+  testName:    { width: "34%", fontSize: "9px", flexShrink: 0, paddingTop: "2px" },
   testValueLine: {
     borderBottom: "1px dotted #999",
     flexGrow: 1,
-    minHeight: "14px",
+    minHeight: "16px",
+    paddingBottom: "1px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-end",
+  },
+  testValue:      { fontSize: "9px", fontWeight: "bold", color: RED },
+  testValueWords: { fontSize: "7.5px", color: "#333", fontStyle: "italic", marginTop: "1px" }, // FIX: #555 → #333
+
+  // ── Opinion / Fee rows — visually separated ───────────────────────────
+  summaryRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    borderTop: "1.5px solid #aaa",  // FIX: thick top border separates from test list
+    borderBottom: "0.5px solid #DDDDDD",
+    padding: "6px 6px",
+    position: "relative",
+    zIndex: 1,
+    backgroundColor: "#fafafa",
+  },
+  summaryName: {
+    width: "34%",
+    fontSize: "9px",
+    flexShrink: 0,
+    paddingTop: "2px",
+    fontStyle: "italic",
+    color: "#444",
+  },
+  summaryValueLine: {
+    borderBottom: "1px dotted #bbb",
+    flexGrow: 1,
+    minHeight: "16px",
     paddingBottom: "1px",
   },
-  testValue: { fontSize: "9px", fontWeight: "bold", color: RED },
+
+  // ── Flex spacer — pushes note bar + footer to page bottom ────────────
+  spacer: { flexGrow: 1 },
 
   // ── Note bar ─────────────────────────────────────────────────────────
   noteBox: {
@@ -275,7 +355,7 @@ const S = {
     textAlign: "center",
   },
 
-  // ── Footer ───────────────────────────────────────────────────────────
+  // ── Footer with signature ────────────────────────────────────────────
   footerRow: {
     marginTop: "10px",
     display: "flex",
@@ -284,8 +364,25 @@ const S = {
     zIndex: 1,
     position: "relative",
   },
-  hindiText:   { fontSize: "9.5px", width: "74%", lineHeight: "1.8" },
-  chemistText: { fontSize: "11px",  fontWeight: "bold" },
+  hindiText: { fontSize: "9.5px", width: "60%", lineHeight: "1.8" },
+  signatureBlock: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2px",
+  },
+  signatureImg: {
+    width: "110px",
+    height: "50px",
+    objectFit: "contain",
+    display: "block",
+  },
+  signatureLine: {
+    width: "110px",
+    borderTop: "1px solid #000",
+    marginBottom: "2px",
+  },
+  chemistText: { fontSize: "11px", fontWeight: "bold", textAlign: "center" },
 };
 
 // ─── DotField ─────────────────────────────────────────────────────────────────
@@ -301,7 +398,7 @@ function DotField({ label, value, style = {} }) {
 }
 
 // ─── ReportTemplate ───────────────────────────────────────────────────────────
-export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSrc }) {
+export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc }) {
   const selectedByName = {};
   const storedTests = Array.isArray(reportData.tests) ? reportData.tests : [];
   storedTests.forEach((item) => { selectedByName[item.name] = item; });
@@ -312,11 +409,12 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
     unit:  selectedByName[test.name]?.unit  || test.unit || "",
   }));
   const customRows = storedTests.filter((t) => !labData.some((item) => item.name === t.name));
-  const allRows = [
-    ...baseRows,
-    ...customRows,
-    { id: "opinion", name: "Opinion",         value: "", unit: "" },
-    { id: "fee",     name: "Fee Charged Rs.", value: "", unit: "" },
+
+  // FIX: Opinion & Fee separated into summaryRows with different styling
+  const testRows    = [...baseRows, ...customRows];
+  const summaryRows = [
+    { id: "opinion", name: "Opinion" },
+    { id: "fee",     name: "Fee Charged Rs." },
   ];
 
   return (
@@ -324,27 +422,22 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
       <div style={S.outerBorder}>
         <div style={S.innerBorder}>
 
-          {/* ── Watermark ──────────────────────────────────────────────── */}
-          {logoSrc && (
+          {/* Watermark */}
+          {waterMarkSrc && (
             <div style={S.watermark}>
-              <img src={logoSrc} alt="" style={{ width: "240px", display: "block" }} />
+              <img src={waterMarkSrc} alt="" style={{ width: "240px", display: "block" }} />
             </div>
           )}
 
-          {/* ── Header ─────────────────────────────────────────────────── */}
+          {/* Header */}
           <div style={S.headerRow}>
             <div style={S.headerLeft}>
               {logoSrc && <img src={logoSrc} style={S.logoImg} alt="Kanpur Lab" />}
             </div>
             <div style={S.headerCenter}>
-              {/* PNG symbols — base64 loaded via loadImageAsBase64() for html2canvas */}
-              {swastikSrc && (
-                <img src={swastikSrc} style={S.symbolImg} alt="swastik" />
-              )}
+              {swastikSrc && <img src={swastikSrc} style={S.symbolImg} alt="swastik" />}
               <span style={S.testReportTitle}>Test Report</span>
-              {omSrc && (
-                <img src={omSrc} style={S.symbolImg} alt="om" />
-              )}
+              {omSrc && <img src={omSrc} style={S.symbolImg} alt="om" />}
             </div>
             <div style={S.phoneBlock}>
               M. 94161-37706<br />
@@ -353,12 +446,12 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
             </div>
           </div>
 
-          {/* ── Brand banner ────────────────────────────────────────────── */}
+          {/* Brand banner */}
           <div style={S.brandBox}>
             <span style={S.brandText}>KANPUR LABORATORY</span>
           </div>
 
-          {/* ── Consultant & Dated ──────────────────────────────────────── */}
+          {/* Consultant & Dated */}
           <div style={S.consultantRow}>
             <span style={S.consultantText}>CONSULTANT &amp; ANALYST</span>
             <div style={S.datedRow}>
@@ -367,12 +460,12 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
             </div>
           </div>
 
-          {/* ── Address ─────────────────────────────────────────────────── */}
+          {/* Address */}
           <div style={S.address}>
             Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
           </div>
 
-          {/* ── Fields ──────────────────────────────────────────────────── */}
+          {/* Fields */}
           <DotField label="Report No."       value={reportData.reportNumber} />
           <DotField label="Supplied by M/s." value={reportData.supplierName} />
           <div style={{ display: "flex", gap: "10px", marginBottom: "6px", zIndex: 1, position: "relative" }}>
@@ -381,7 +474,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
           </div>
           <DotField label="To M/s." value={reportData.toMs} />
 
-          {/* ── Analysis table ──────────────────────────────────────────── */}
+          {/* Analysis table */}
           <div style={S.table}>
             <div style={S.tableHeaderRow}>
               <div style={S.col0}><span style={S.colTitle}>Result of Analysis</span></div>
@@ -400,35 +493,60 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
             </div>
           </div>
 
-          {/* ── Test rows ───────────────────────────────────────────────── */}
-          {allRows.map((test, i) => (
-            <div
-              key={test.id || test.name}
-              style={{ ...S.testRow, ...(i % 2 === 0 ? S.testRowAlt : {}) }}
-            >
-              <div style={S.testName}>{test.name}</div>
-              <div style={S.testValueLine}>
-                <span style={S.testValue}>
-                  {test.value ? `${test.value}${test.unit ? ` ${test.unit}` : ""}` : ""}
-                </span>
+          {/* Test rows */}
+          {testRows.map((test, i) => {
+            const rawUnit      = (test.unit || "").trim();
+            const isPercent    = rawUnit === "%";
+            const unitSuffix   = rawUnit ? (isPercent ? " %" : ` ${rawUnit}`) : "";
+            const displayValue = test.value ? `${test.value}${unitSuffix}` : "";
+            const words        = test.value ? numberToWords(test.value, isPercent) : "";
+            return (
+              <div
+                key={test.id || test.name}
+                style={{ ...S.testRow, ...(i % 2 === 0 ? S.testRowAlt : {}) }}
+              >
+                <div style={S.testName}>{test.name}</div>
+                <div style={S.testValueLine}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                    <span style={S.testValue}>{displayValue}</span>
+                    {words && <span style={S.testValueWords}>({words})</span>}
+                  </div>
+                </div>
               </div>
+            );
+          })}
+
+          {/* FIX: Opinion & Fee — separated visually with thicker border + italic label */}
+          {summaryRows.map((row) => (
+            <div key={row.id} style={S.summaryRow}>
+              <div style={S.summaryName}>{row.name}</div>
+              <div style={S.summaryValueLine} />
             </div>
           ))}
 
-          {/* ── Note bar ────────────────────────────────────────────────── */}
+          {/* FIX: Spacer pushes note bar and footer to bottom of A4 */}
+          <div style={S.spacer} />
+
+          {/* Note bar */}
           <div style={S.noteBox}>
             <span style={S.noteText}>
               Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
             </span>
           </div>
 
-          {/* ── Footer ──────────────────────────────────────────────────── */}
+          {/* Footer */}
           <div style={S.footerRow}>
             <div style={S.hindiText}>
               अन्यायपूर्वक कमाया हुआ धन हमारे काम आ जाए यह नियम नहीं<br />
               परन्तु उसका दण्ड, भोगना पड़ेगा - यह नियम है।
             </div>
-            <span style={S.chemistText}>CHEMIST</span>
+            <div style={S.signatureBlock}>
+              {signSrc && (
+                <img src={signSrc} alt="Chemist Signature" style={S.signatureImg} />
+              )}
+              <div style={S.signatureLine} />
+              <span style={S.chemistText}>CHEMIST</span>
+            </div>
           </div>
 
         </div>
@@ -438,17 +556,9 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, swastikSrc, omSr
 }
 
 // ─── captureTemplate ──────────────────────────────────────────────────────────
-async function captureTemplate(reportData, logoSrc, swastikSrc, omSrc) {
+async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
   const container = document.createElement("div");
-  container.style.cssText = [
-    "position:fixed",
-    "top:0",
-    "left:0",
-    "width:794px",
-    "opacity:0",
-    "pointer-events:none",
-    "z-index:99999",
-  ].join(";");
+  container.style.cssText = "position:fixed;top:0;left:0;width:794px;opacity:0;pointer-events:none;z-index:99999;";
   document.body.appendChild(container);
 
   const { createRoot } = await import("react-dom/client");
@@ -460,15 +570,16 @@ async function captureTemplate(reportData, logoSrc, swastikSrc, omSrc) {
         reportData={reportData}
         innerRef={null}
         logoSrc={logoSrc}
+        waterMarkSrc={waterMarkSrc}
         swastikSrc={swastikSrc}
         omSrc={omSrc}
+        signSrc={signSrc}
       />
     );
     setTimeout(resolve, 600);
   });
 
   const el = container.firstChild;
-
   try {
     const canvas = await html2canvas(el, {
       scale: 2,
@@ -481,7 +592,6 @@ async function captureTemplate(reportData, logoSrc, swastikSrc, omSrc) {
       windowWidth: 794,
       windowHeight: el.scrollHeight,
     });
-
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     doc.addImage(
       canvas.toDataURL("image/jpeg", 0.97),
@@ -498,8 +608,8 @@ async function captureTemplate(reportData, logoSrc, swastikSrc, omSrc) {
 }
 
 // ─── generatePDF ──────────────────────────────────────────────────────────────
-export async function generatePDF(reportData, filename, logoSrc, swastikSrc, omSrc) {
-  const doc = await captureTemplate(reportData, logoSrc, swastikSrc, omSrc);
+export async function generatePDF(reportData, filename, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
+  const doc = await captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
   doc.save(
     filename ||
     `${(reportData.reportNumber || reportData.supplierName || "report")
@@ -508,35 +618,46 @@ export async function generatePDF(reportData, filename, logoSrc, swastikSrc, omS
 }
 
 // ─── generatePDFBlob ──────────────────────────────────────────────────────────
-export async function generatePDFBlob(reportData, logoSrc, swastikSrc, omSrc) {
-  const doc = await captureTemplate(reportData, logoSrc, swastikSrc, omSrc);
+export async function generatePDFBlob(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
+  const doc = await captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
   return doc.output("blob");
+}
+
+// ─── hook — loads all image assets ───────────────────────────────────────────
+export function useReportAssets() {
+  const [logoSrc,      setLogoSrc]      = useState(null);
+  const [waterMarkSrc, setWaterMarkSrc] = useState(null);
+  const [swastikSrc,   setSwastikSrc]   = useState(null);
+  const [omSrc,        setOmSrc]        = useState(null);
+  const [signSrc,      setSignSrc]      = useState(null);
+
+  useEffect(() => {
+    loadImageAsBase64(kanpurLabLogo).then(setLogoSrc);
+    loadImageAsBase64(kanpurLabWaterMark).then(setWaterMarkSrc);
+    loadImageAsBase64(swastikPng).then(setSwastikSrc);
+    loadImageAsBase64(omPng).then(setOmSrc);
+    loadImageAsBase64(chemistSignPng).then(setSignSrc);
+  }, []);
+
+  return { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc };
 }
 
 // ─── ReportDownloadLink ───────────────────────────────────────────────────────
 export function ReportDownloadLink({ reportData, children }) {
-  const [loading,    setLoading]    = useState(false);
-  const [logoSrc,    setLogoSrc]    = useState(null);
-  const [swastikSrc, setSwastikSrc] = useState(null);
-  const [omSrc,      setOmSrc]      = useState(null);
-
-  useEffect(() => {
-    loadImageAsBase64(kanpurLabLogo).then(setLogoSrc);
-    loadImageAsBase64(swastikPng).then(setSwastikSrc);
-    loadImageAsBase64(omPng).then(setOmSrc);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
 
   const handleClick = useCallback(async () => {
     if (loading) return;
     setLoading(true);
     try {
-      await generatePDF(reportData, undefined, logoSrc, swastikSrc, omSrc);
+      await generatePDF(reportData, undefined, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
       setLoading(false);
     }
-  }, [reportData, loading, logoSrc, swastikSrc, omSrc]);
+  }, [reportData, loading, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc]);
 
   return (
     <span
@@ -553,15 +674,7 @@ export function ReportDownloadLink({ reportData, children }) {
 // ─── Default export — preview ─────────────────────────────────────────────────
 export default function Report({ sample }) {
   const reportData = useMemo(() => getReportDataFromSample(sample), [sample]);
-  const [logoSrc,    setLogoSrc]    = useState(null);
-  const [swastikSrc, setSwastikSrc] = useState(null);
-  const [omSrc,      setOmSrc]      = useState(null);
-
-  useEffect(() => {
-    loadImageAsBase64(kanpurLabLogo).then(setLogoSrc);
-    loadImageAsBase64(swastikPng).then(setSwastikSrc);
-    loadImageAsBase64(omPng).then(setOmSrc);
-  }, []);
+  const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
 
   if (!reportData) return null;
 
@@ -572,8 +685,10 @@ export default function Report({ sample }) {
           reportData={reportData}
           innerRef={null}
           logoSrc={logoSrc}
+          waterMarkSrc={waterMarkSrc}
           swastikSrc={swastikSrc}
           omSrc={omSrc}
+          signSrc={signSrc}
         />
       </div>
     </div>
