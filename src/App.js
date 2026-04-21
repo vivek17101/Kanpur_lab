@@ -42,7 +42,7 @@ function App() {
 
   return (
     <div className="App">
-      <Header title="Chemical Analysis Lab" />
+      <Header title="Kanpur Laboratory" />
       <main className="container main" style={{ "--mt": 10, "--mb": 10 }}>
         {isCheckingSession ? (
           <p className={styles.loading}>Checking admin session...</p>

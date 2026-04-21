@@ -71,7 +71,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "public/logo512.png"
+      "icon": "public/KanpurLab_AppLogo.ico"
     },
     "nsis": {
       "oneClick": false,

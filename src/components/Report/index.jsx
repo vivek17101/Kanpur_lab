@@ -96,6 +96,7 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
   if (!sample) return null;
   return {
     reportNumber:      sample.reportNumber      || "",
+    sampleNo:          sample.sampleNo          || "",
     supplierName:      sample.supplierName      || "",
     CO:                sample.CO                || "",
     toMs:              sample.toMs              || "",
@@ -470,7 +471,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
           <DotField label="Supplied by M/s." value={reportData.supplierName} />
           <div style={{ display: "flex", gap: "10px", marginBottom: "6px", zIndex: 1, position: "relative" }}>
             <DotField label="C/o."              value={reportData.CO}              style={{ width: "52%", marginBottom: 0 }} />
-            <DotField label="Nature of Sample:" value={reportData.sampleReference} style={{ width: "46%", marginBottom: 0 }} />
+            <DotField label="Sample Type:" value={reportData.sampleReference} style={{ width: "46%", marginBottom: 0 }} />
           </div>
           <DotField label="To M/s." value={reportData.toMs} />
 
@@ -482,7 +483,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               <div style={S.col2}><span style={S.colSubTitle}>Sample Not Drawn By Kanpur Laboratory</span></div>
             </div>
             <div style={S.tableSubRow}>
-              <div style={S.col0}>Code No./S.No. {reportData.reportNumber || "...................."}</div>
+              <div style={S.col0}>Code No./S.No. {reportData.sampleNo || reportData.reportNumber || "...................."}</div>
               <div style={S.col1}>Date of Seal {reportData.dateOfSeal || "...................."}</div>
               <div style={S.col2}>Received on {reportData.dateReceived || "...................."}</div>
             </div>
@@ -594,8 +595,8 @@ async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, om
     });
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     doc.addImage(
-      canvas.toDataURL("image/jpeg", 0.97),
-      "JPEG",
+      canvas.toDataURL("image/png"),
+      "PNG",
       0, 0,
       doc.internal.pageSize.getWidth(),
       doc.internal.pageSize.getHeight()

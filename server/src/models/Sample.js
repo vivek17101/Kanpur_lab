@@ -40,6 +40,11 @@ const sampleSchema = new mongoose.Schema(
     reportSequence: {
       type: Number,
     },
+    sampleNo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     supplierName: {
       type: String,
       required: true,

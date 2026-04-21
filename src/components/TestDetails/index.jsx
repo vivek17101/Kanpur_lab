@@ -50,11 +50,6 @@ export default function TestDetails({ ...restProps }) {
         </td>
         <td>{data.unit}</td>
         <td>
-          {Array.isArray(data.referenceValue)
-            ? data.referenceValue.map((value, index) => (
-                <p key={`${data.id}-${index}`}>{value}</p>
-              ))
-            : data.referenceValue}
           <Button
             size="md"
             iconPlacement="only"
@@ -93,7 +88,7 @@ export default function TestDetails({ ...restProps }) {
               <th>Test</th>
               <th>Value</th>
               <th>Unit</th>
-              <th>Normal Values</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +101,6 @@ export default function TestDetails({ ...restProps }) {
                   name={test.name}
                   value={test.value}
                   unit={test.unit}
-                  referenceValue={test.referenceValue}
                   key={test.id}
                   data={test}
                 />
