@@ -17,6 +17,16 @@ import Report, {
 } from "../Report";
 import styles from "./SampleRegister.module.css";
 
+const SAMPLE_TYPES = [
+  "Rice Bran",
+  "Cotton Seed",
+  "Cotton Cake",
+  "Mustard Seeds",
+  "Mustard Cake",
+  "DOC",
+  "Dal",
+];
+
 const emptyForm = {
   sampleNo: "",
   supplierName: "",
@@ -191,22 +201,13 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
       .sort((a, b) => a.localeCompare(b));
   }, [samples, suppliers]);
 
-  const SAMPLE_TYPES = [
-    "Rice Bran",
-    "Cotton Seed",
-    "Cotton Cake",
-    "Mustard Seeds",
-    "Mustard Cake",
-    "DOC",
-    "Dal",
-  ];
-
   const sampleTypeOptions = useMemo(() => {
     const savedSampleTypes = samples
       .map((sample) => sample.sampleReference)
       .filter((type) => type && !SAMPLE_TYPES.includes(type));
 
-    return [...new Set([...SAMPLE_TYPES, ...savedSampleTypes])];
+    return [...new Set([...SAMPLE_TYPES, ...savedSampleTypes])]
+      .sort((a, b) => a.localeCompare(b));
   }, [samples]);
 
 
@@ -567,6 +568,11 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                 <option value={supplier} key={supplier} />
               ))}
             </datalist>
+            <datalist id="sample-type-options">
+              {sampleTypeOptions.map((sampleType) => (
+                <option value={sampleType} key={sampleType} />
+              ))}
+            </datalist>
             <div className={styles.grid}>
               <label className={styles.field}>
                 <span>Sample No.</span>
@@ -586,12 +592,14 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               </label>
               <label className={styles.field}>
                 <span>Sample Type</span>
-                <select name="sampleReference" value={form.sampleReference} onChange={handleFormChange} required>
-                  <option value="">Select Sample Type</option>
-                  {sampleTypeOptions.map((sampleType) => (
-                    <option value={sampleType} key={sampleType}>{sampleType}</option>
-                  ))}
-                </select>
+                <input
+                  list="sample-type-options"
+                  name="sampleReference"
+                  value={form.sampleReference}
+                  onChange={handleFormChange}
+                  placeholder="Select or type sample type"
+                  required
+                />
               </label>
               <label className={styles.field}>
                 <span>Date of Seal</span>
@@ -726,6 +734,11 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               <option value={supplier} key={supplier} />
             ))}
           </datalist>
+          <datalist id="sample-type-options">
+            {sampleTypeOptions.map((sampleType) => (
+              <option value={sampleType} key={sampleType} />
+            ))}
+          </datalist>
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">Test Result Entry</h3>
@@ -756,12 +769,14 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               </label>
               <label className={styles.field}>
                 <span>Sample Type</span>
-                <select name="sampleReference" value={sampleFields.sampleReference} onChange={handleSampleFieldChange} required>
-                  <option value="">Select Sample Type</option>
-                  {sampleTypeOptions.map((sampleType) => (
-                    <option value={sampleType} key={sampleType}>{sampleType}</option>
-                  ))}
-                </select>
+                <input
+                  list="sample-type-options"
+                  name="sampleReference"
+                  value={sampleFields.sampleReference}
+                  onChange={handleSampleFieldChange}
+                  placeholder="Select or type sample type"
+                  required
+                />
               </label>
               <label className={styles.field}>
                 <span>Date of Seal</span>

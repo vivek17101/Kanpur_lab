@@ -1,34 +1,18 @@
-/**
- * Report/index.jsx — html2canvas + jsPDF  (v8)
- *
- * CHANGES FROM v7:
- * ─────────────────────────────────────────────────────────────────────
- * [FIX]    testRow alignItems flex-start → center
- * [FIX]    testName paddingTop removed, display:flex alignItems:center
- * [FIX]    testValueLine justifyContent flex-end → center
- * [FIX]    summaryRow alignItems flex-start → center
- * [FIX]    summaryName paddingTop removed, display:flex alignItems:center
- *          Result: name label and dotted value line are vertically
- *          centered and consistent across filled & empty rows
- * ─────────────────────────────────────────────────────────────────────
- */
 import { useMemo, useState, useCallback, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import labData from "../../data/labTests";
 
-// ── Import assets via bundler ─────────────────────────────────────────────────
 import kanpurLabLogo      from "../../assets/kanpur_lab_logo.png";
 import kanpurLabWaterMark from "../../assets/kanpur_lab_WaterMark.png";
 import swastikPng         from "../../assets/Swastika_Symbol.png";
 import omPng              from "../../assets/OM_Symbol.png";
 import chemistSignPng     from "../../assets/chemist_sign.png";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const RED   = "#CC0000";
 const DKRED = "#990000";
 
-// ─── Base64 loader ────────────────────────────────────────────────────────────
+// Converts image assets to data URLs so preview and PDF capture render consistently.
 async function loadImageAsBase64(src) {
   if (!src) return null;
   return new Promise((resolve) => {
@@ -46,13 +30,11 @@ async function loadImageAsBase64(src) {
   });
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(date) {
   if (!date) return "";
   return new Date(date).toLocaleDateString("en-IN");
 }
 
-// ─── Number → English words ───────────────────────────────────────────────────
 const ones   = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
                  "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
                  "Seventeen","Eighteen","Nineteen"];
@@ -111,7 +93,7 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
   };
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// Shared inline style map used by the preview and PDF renderer.
 const S = {
   page: {
     width: "794px",
@@ -150,14 +132,12 @@ const S = {
     zIndex: 0,
     userSelect: "none",
   },
-
-  // ── Header ──────────────────────────────────────────────────────────
   headerRow: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: "8px",        // pushes "Test Report" title down slightly
+    marginTop: "8px",        
     marginBottom: "10px",
     position: "relative",
     zIndex: 1,
@@ -187,13 +167,11 @@ const S = {
     whiteSpace: "nowrap",
     flexShrink: 0,
   },
-
-  // ── Brand banner ────────────────────────────────────────────────────
   brandBox: {
     backgroundColor: RED,
-    padding: "8px 8px",      // increased from 6px
-    marginBottom: "8px",     // increased from 5px
-    marginTop: "6px",        // increased from 4px
+    padding: "8px 8px",      
+    marginBottom: "8px",     
+    marginTop: "6px",        
     textAlign: "center",
     position: "relative",
     zIndex: 1,
@@ -208,8 +186,6 @@ const S = {
     textShadow: "1px 1px 0 rgba(0,0,0,0.3)",
     fontStyle: "italic",
   },
-
-  // ── Consultant row ──────────────────────────────────────────────────
   consultantRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -236,12 +212,10 @@ const S = {
     position: "relative",
     zIndex: 1,
   },
-
-  // ── DotField ────────────────────────────────────────────────────────
   fieldRow: {
     display: "flex",
     alignItems: "flex-end",
-    marginBottom: "12px",    // increased from 6px
+    marginBottom: "12px",    
     gap: "3px",
     position: "relative",
     zIndex: 1,
@@ -254,8 +228,6 @@ const S = {
     paddingBottom: "1px",
   },
   fieldValue: { fontSize: "11px", fontWeight: "bold", color: DKRED },
-
-  // ── Table ────────────────────────────────────────────────────────────
   table: {
     border: "1px solid #000",
     marginTop: "6px",
@@ -288,11 +260,9 @@ const S = {
   colTitle:    { fontWeight: "bold", fontSize: "11px" },
   colTitleRed: { fontWeight: "bold", fontSize: "11px", color: RED, textAlign: "center", display: "block" },
   colSubTitle: { fontWeight: "bold", fontSize: "9.5px", color: RED, textAlign: "center", display: "block" },
-
-  // ── Test rows ────────────────────────────────────────────────────────
   testRow: {
     display: "flex",
-    alignItems: "center",    // vertically centers name & value on same baseline
+    alignItems: "center",    
     borderBottom: "0.5px solid #DDDDDD",
     padding: "10px 6px",
     position: "relative",
@@ -300,7 +270,7 @@ const S = {
   },
   testRowAlt:  { backgroundColor: "transparent" },
   testName: {
-    width: "22%",            // reduced from 34% — value starts close after name
+    width: "22%",            
     fontSize: "11px",
     flexShrink: 0,
     display: "flex",
@@ -317,11 +287,9 @@ const S = {
   },
   testValue:      { fontSize: "11px", fontWeight: "bold", color: RED },
   testValueWords: { fontSize: "11px", color: "#333", fontStyle: "italic", marginTop: "1px" },
-
-  // ── Opinion / Fee rows — visually separated ───────────────────────────
   summaryRow: {
     display: "flex",
-    alignItems: "center",    // consistent with testRow
+    alignItems: "center",    
     borderTop: "1.5px solid #aaa",
     borderBottom: "0.5px solid #DDDDDD",
     padding: "14px 6px",
@@ -330,7 +298,7 @@ const S = {
     backgroundColor: "#fafafa",
   },
   summaryName: {
-    width: "22%",            // matches testName width
+    width: "22%",            
     fontSize: "11px",
     flexShrink: 0,
     fontStyle: "italic",
@@ -344,11 +312,7 @@ const S = {
     minHeight: "16px",
     paddingBottom: "1px",
   },
-
-  // ── Flex spacer — pushes note bar + footer to page bottom ────────────
   spacer: { flexGrow: 1 },
-
-  // ── Note bar ─────────────────────────────────────────────────────────
   noteBox: {
     backgroundColor: RED,
     padding: "4px 8px",
@@ -362,8 +326,6 @@ const S = {
     fontWeight: "bold",
     textAlign: "center",
   },
-
-  // ── Footer with signature ────────────────────────────────────────────
   footerRow: {
     marginTop: "10px",
     display: "flex",
@@ -393,7 +355,7 @@ const S = {
   chemistText: { fontSize: "11px", fontWeight: "bold", textAlign: "center" },
 };
 
-// ─── DotField ─────────────────────────────────────────────────────────────────
+// Renders a labeled value line used in the report header details.
 function DotField({ label, value, style = {} }) {
   return (
     <div style={{ ...S.fieldRow, ...style }}>
@@ -405,7 +367,7 @@ function DotField({ label, value, style = {} }) {
   );
 }
 
-// ─── ReportTemplate ───────────────────────────────────────────────────────────
+// Builds the printable report layout used by both preview and export.
 export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc }) {
   const selectedByName = {};
   const storedTests = Array.isArray(reportData.tests) ? reportData.tests : [];
@@ -428,15 +390,11 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
     <div style={S.page} ref={innerRef}>
       <div style={S.outerBorder}>
         <div style={S.innerBorder}>
-
-          {/* Watermark */}
           {waterMarkSrc && (
             <div style={S.watermark}>
               <img src={waterMarkSrc} alt="" style={{ width: "240px", display: "block" }} />
             </div>
           )}
-
-          {/* Header */}
           <div style={S.headerRow}>
             <div style={S.headerLeft}>
               {logoSrc && <img src={logoSrc} style={S.logoImg} alt="Kanpur Lab" />}
@@ -452,13 +410,9 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               M. 93063-59224
             </div>
           </div>
-
-          {/* Brand banner */}
           <div style={S.brandBox}>
             <span style={S.brandText}>KANPUR LABORATORY</span>
           </div>
-
-          {/* Consultant & Dated */}
           <div style={S.consultantRow}>
             <span style={S.consultantText}>CONSULTANT &amp; ANALYST</span>
             <div style={S.datedRow}>
@@ -466,13 +420,9 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               <span style={S.datedValue}>{reportData.dated || ""}</span>
             </div>
           </div>
-
-          {/* Address */}
           <div style={S.address}>
             Gali No. 19, Peoda Road, Byepass, KAITHAL-136027 (Hry)
           </div>
-
-          {/* Fields */}
           <DotField label="Report No."       value={reportData.reportNumber} />
           <DotField label="Supplied by M/s." value={reportData.supplierName} />
           <div style={{ display: "flex", gap: "10px", marginBottom: "12px", zIndex: 1, position: "relative" }}>
@@ -480,8 +430,6 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
             <DotField label="Sample Type:" value={reportData.sampleReference} style={{ width: "46%", marginBottom: 0 }} />
           </div>
           <DotField label="To M/s." value={reportData.toMs} />
-
-          {/* Analysis table */}
           <div style={S.table}>
             <div style={S.tableHeaderRow}>
               <div style={S.col0}><span style={S.colTitle}>Result of Analysis</span></div>
@@ -499,8 +447,6 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               <div style={S.col2}>Con. of Sample {reportData.conditionOfSample || "........"}</div>
             </div>
           </div>
-
-          {/* Test rows */}
           {testRows.map((test, i) => {
             const rawUnit      = (test.unit || "").trim();
             const isPercent    = rawUnit === "%";
@@ -522,26 +468,18 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               </div>
             );
           })}
-
-          {/* Opinion & Fee — visually separated */}
           {summaryRows.map((row) => (
             <div key={row.id} style={S.summaryRow}>
               <div style={S.summaryName}>{row.name}</div>
               <div style={S.summaryValueLine} />
             </div>
           ))}
-
-          {/* Spacer pushes note bar and footer to bottom of A4 */}
           <div style={S.spacer} />
-
-          {/* Note bar */}
           <div style={S.noteBox}>
             <span style={S.noteText}>
               Note :- Sample will be Re-analysed only with in TEN Days after that SAMPLE WILL be destroyed.
             </span>
           </div>
-
-          {/* Footer */}
           <div style={S.footerRow}>
             <div style={S.hindiText}>
               अन्यायपूर्वक कमाया हुआ धन हमारे काम आ जाए यह नियम नहीं<br />
@@ -562,7 +500,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
   );
 }
 
-// ─── captureTemplate ──────────────────────────────────────────────────────────
+// Renders the report off-screen and captures it for PDF creation.
 async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
   const container = document.createElement("div");
   container.style.cssText = "position:fixed;top:0;left:0;width:794px;opacity:0;pointer-events:none;z-index:99999;";
@@ -614,7 +552,7 @@ async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, om
   }
 }
 
-// ─── generatePDF ──────────────────────────────────────────────────────────────
+// Downloads a PDF file for the provided report data.
 export async function generatePDF(reportData, filename, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
   const doc = await captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
   doc.save(
@@ -624,13 +562,13 @@ export async function generatePDF(reportData, filename, logoSrc, waterMarkSrc, s
   );
 }
 
-// ─── generatePDFBlob ──────────────────────────────────────────────────────────
+// Returns a PDF blob for share workflows.
 export async function generatePDFBlob(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
   const doc = await captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
   return doc.output("blob");
 }
 
-// ─── hook — loads all image assets ───────────────────────────────────────────
+// Loads the report image assets once for preview and export.
 export function useReportAssets() {
   const [logoSrc,      setLogoSrc]      = useState(null);
   const [waterMarkSrc, setWaterMarkSrc] = useState(null);
@@ -649,7 +587,7 @@ export function useReportAssets() {
   return { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc };
 }
 
-// ─── ReportDownloadLink ───────────────────────────────────────────────────────
+// Wraps report downloads with loading state handling.
 export function ReportDownloadLink({ reportData, children }) {
   const [loading, setLoading] = useState(false);
   const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
@@ -678,7 +616,7 @@ export function ReportDownloadLink({ reportData, children }) {
   );
 }
 
-// ─── Default export — preview ─────────────────────────────────────────────────
+// Shows an on-screen preview of the report layout.
 export default function Report({ sample }) {
   const reportData = useMemo(() => getReportDataFromSample(sample), [sample]);
   const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
@@ -701,3 +639,4 @@ export default function Report({ sample }) {
     </div>
   );
 }
+

@@ -1,119 +1,86 @@
-# Kanpur Lab
+# Kanpur Laboratory
 
-React + Node.js + Express + MongoDB lab register and PDF reporting app.
+Kanpur Laboratory is a React, Express, MongoDB, and Electron app for managing sample entries, supplier records, test results, and branded PDF reports.
 
-## Feature Overview
+## Highlights
 
-- Store sample entries in MongoDB using the `Sample` schema.
-- Automatically assign yearly report numbers such as `KL/2026/0001`.
-- Manage samples in an Excel-like register table.
-- View dashboard counters for total, pending, tested, and reported samples.
-- Export the currently filtered register to CSV or Excel-compatible `.xls`.
-- Admin login protects the register and supplier management screens.
-- Use supplier autocomplete from saved supplier master records plus previous register entries.
-- Store supplier WhatsApp numbers, contact person, and address.
-- Add or update test result values for each sample.
-- Edit report details such as `To M/s`, lorry number, bags, weight, and condition of sample.
-- Generate the existing PDF report layout from saved sample data.
-- Download the generated PDF or share it to a saved supplier WhatsApp number where available.
+- Creates yearly report numbers such as `KL/2026/0001`.
+- Stores samples, test results, and supplier details in MongoDB.
+- Shows register counters for total, pending, tested, and reported samples.
+- Filters the sample register by search text, status, and date range.
+- Exports the current register view to CSV and Excel-compatible `.xls`.
+- Suggests saved supplier names and sample types while still allowing manual entry.
+- Generates the current Kanpur Laboratory PDF report layout.
+- Supports report sharing through WhatsApp when a supplier number is available.
+- Uses the updated `KanpurLab_AppLogo192` desktop app icon in the Electron shell.
 
-## Backend Structure
+## Project Structure
 
 ```text
+src/
+  assets/
+  components/
+  data/
+  services/
+electron/
+  main.js
+public/
+  KanpurLab_AppLogo.ico
+  KanpurLab_AppLogo192.png
+  KanpurLab_AppLogo512.png
 server/
-  .env.example
-  package.json
   src/
-    app.js
-    server.js
     config/
-      db.js
     controllers/
-      authController.js
-      sampleController.js
-      supplierController.js
     middleware/
-      authMiddleware.js
     models/
-      Admin.js
-      Counter.js
-      Sample.js
-      Supplier.js
     routes/
-      authRoutes.js
-      sampleRoutes.js
-      supplierRoutes.js
 ```
 
-## API Endpoints
+## Main Flows
 
-- `POST /samples` creates a sample entry.
-- `GET /samples` lists samples. Supports `search` and `status` query params.
-- `GET /samples/stats/summary` returns dashboard counters. Supports `search`, `startDate`, and `endDate`.
-- `GET /samples/:id` returns one sample.
-- `PUT /samples/:id` updates sample fields or test results.
-- `DELETE /samples/:id` deletes a sample entry.
-- `POST /auth/login` logs in an admin.
-- `GET /auth/me` verifies the current admin token.
-- `GET /suppliers` lists supplier master records.
-- `POST /suppliers` creates a supplier. Requires admin token.
-- `PUT /suppliers/:id` updates supplier details. Requires admin token.
-- `DELETE /suppliers/:id` deletes a supplier. Requires admin token.
+- `New Entry` creates a sample with supplier and transport details.
+- `Sample List` shows saved records and supports filtering plus export.
+- `View / Add Test Results` updates sample details and lab test values.
+- `Report` previews the saved report and supports download or share.
+- `Supplier Master` manages supplier contact details used by the register and sharing flow.
 
-Example create request:
+## API Summary
 
-```json
-{
-  "supplierName": "ABC Foods",
-  "CO": "Kaithal",
-  "toMs": "Customer Name",
-  "sampleReference": "Mustard Oil",
-  "dateOfSeal": "2026-04-17",
-  "dateReceived": "2026-04-17",
-  "lorryNo": "HR-08-1234",
-  "bags": "10",
-  "weight": "500 kg",
-  "conditionOfSample": "Sealed"
-}
-```
-
-Example test update:
-
-```json
-{
-  "dateOfTest": "2026-04-17",
-  "tests": [
-    {
-      "name": "Moisture (Including Volatiles)",
-      "value": "0.12",
-      "unit": "%",
-      "referenceValue": ""
-    }
-  ]
-}
-```
+- `POST /samples` creates a sample.
+- `GET /samples` lists samples with filters.
+- `GET /samples/stats/summary` returns dashboard counts.
+- `GET /samples/:id` fetches one sample.
+- `PUT /samples/:id` updates sample details or test results.
+- `DELETE /samples/:id` deletes a sample.
+- `POST /auth/login` signs in an admin.
+- `GET /auth/me` validates the current session.
+- `GET /suppliers` lists suppliers.
+- `POST /suppliers` creates a supplier.
+- `PUT /suppliers/:id` updates a supplier.
+- `DELETE /suppliers/:id` deletes a supplier.
 
 ## Local Setup
 
-1. Install frontend dependencies:
+1. Install frontend dependencies.
 
 ```bash
 npm install
 ```
 
-2. Install backend dependencies:
+2. Install backend dependencies.
 
 ```bash
 npm run server:install
 ```
 
-3. Create backend environment file:
+3. Create the backend environment file.
 
 ```bash
 copy server\.env.example server\.env
 ```
 
-4. Update `server/.env` if your MongoDB URL is different:
+4. Update `server/.env` if needed.
 
 ```text
 PORT=5000
@@ -124,45 +91,39 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 ```
 
-5. Start MongoDB locally.
+5. Start MongoDB.
 
-6. Start the backend:
+6. Start the backend.
 
 ```bash
 npm run server
 ```
 
-7. In another terminal, start the React app:
+7. Start the frontend in another terminal.
 
 ```bash
 npm start
 ```
 
-Default admin login is controlled by `server/.env`. For local development:
+Default local admin credentials:
 
 ```text
 Username: admin
 Password: admin123
 ```
 
-Change `ADMIN_PASSWORD` and `AUTH_SECRET` before real use.
+## Desktop Build
 
-The frontend calls `http://localhost:5000` by default. To change it, create a frontend `.env` file:
+Create a production web build:
 
-```text
-REACT_APP_API_URL=http://localhost:5000
+```bash
+npm run build
 ```
 
-## Frontend Flow
+Create the Electron desktop package:
 
-- `Sample Register` opens the new database-backed register.
-- `New Entry` saves supplier/sample details to MongoDB.
-- `Sample List` shows supplier, reference, received date, and status.
-- Search supports report number, supplier, reference, and C/o.
-- Date filters narrow the register by received date.
-- `Export CSV` and `Export Excel` download the current filtered register view.
-- `Supplier Master` lets admins add, edit, and delete supplier WhatsApp details.
-- Supplier fields use autocomplete suggestions from saved supplier master records and loaded sample history.
-- `View / Add Test Results` opens editable sample/report details plus the result-entry grid.
-- `Report` renders the saved sample through the existing PDF layout.
-- `Share to Supplier WhatsApp` opens the saved supplier number directly. If no number is saved, it falls back to generic WhatsApp share.
+```bash
+npm run electron:build
+```
+
+The Electron app loads the production build from `build/` and uses the updated logo assets from `public/`.

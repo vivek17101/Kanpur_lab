@@ -43,7 +43,7 @@ function findNpm() {
     if (cmd && fs.existsSync(cmd)) return cmd
   } catch (e) {}
 
-  // Derive npm.cmd from node location
+  // Resolve npm from the detected Node.js install when direct lookup is unavailable.
   try {
     const nodeBin = path.dirname(findNode())
     const npmCmd = path.join(nodeBin, 'npm.cmd')
@@ -60,7 +60,7 @@ function findNpm() {
   return 'npm'
 }
 
-// server lives in resources/server/ outside the asar
+// Uses the packaged server in production and the local server in development.
 function getServerDir() {
   const inResources = path.join(process.resourcesPath, 'server')
   const inDev = path.join(__dirname, '..', 'server')
@@ -85,7 +85,7 @@ function waitForPort(port, retries = 30, delay = 500) {
       const sock = new net.Socket()
       sock.setTimeout(500)
       sock.once('connect', () => { sock.destroy(); resolve() })
-      sock.once('error',   () => { sock.destroy(); ++n >= retries ? reject() : setTimeout(check, delay) })
+      sock.once('error', () => { sock.destroy(); ++n >= retries ? reject() : setTimeout(check, delay) })
       sock.once('timeout', () => { sock.destroy(); ++n >= retries ? reject() : setTimeout(check, delay) })
       sock.connect(port, '127.0.0.1')
     }
@@ -110,21 +110,20 @@ function setStatus(text, pct) {
   ).catch(() => {})
 }
 
-// install server deps if node_modules missing — only happens on first launch
+// Installs backend dependencies for packaged builds when needed.
 function ensureServerDeps(serverDir, npmPath) {
   const nmDir = path.join(serverDir, 'node_modules')
   if (fs.existsSync(nmDir)) return true
 
   setStatus('Installing server dependencies (first launch only)...', 30)
 
-  // Wrap paths in quotes to handle spaces (e.g. C:\Program Files\nodejs\npm.cmd)
   const quotedNpm = `"${npmPath}"`
   const quotedDir = `"${serverDir}"`
 
   const result = spawnSync(quotedNpm, ['install', '--prefix', quotedDir], {
     encoding: 'utf8',
     timeout: 120000,
-    shell: true,      // needed for .cmd files on Windows
+    shell: true,
     env: { ...process.env }
   })
 
@@ -164,9 +163,8 @@ async function startServer() {
   }
 
   const nodePath = findNode()
-  const npmPath  = findNpm()
+  const npmPath = findNpm()
 
-  // install deps on first launch
   const depsOk = ensureServerDeps(serverDir, npmPath)
   if (!depsOk) return false
 
@@ -232,4 +230,4 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => { if (serverProcess) { serverProcess.kill(); serverProcess = null } app.quit() })
-app.on('before-quit',       () => { if (serverProcess) { serverProcess.kill(); serverProcess = null } })
+app.on('before-quit', () => { if (serverProcess) { serverProcess.kill(); serverProcess = null } })
