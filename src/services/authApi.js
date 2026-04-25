@@ -11,3 +11,14 @@ export function loginAdmin(credentials) {
 export function getCurrentAdmin() {
   return request("/auth/me");
 }
+
+export function getDatabaseBackup() {
+  return request("/auth/backup");
+}
+
+export function restoreDatabase(backup) {
+  return request("/auth/restore", {
+    method: "POST",
+    body: JSON.stringify(backup),
+  });
+}

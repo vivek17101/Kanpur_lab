@@ -1,4 +1,7 @@
 const Admin = require("../models/Admin");
+const Counter = require("../models/Counter");
+const Sample = require("../models/Sample");
+const Supplier = require("../models/Supplier");
 const { createToken, hashPassword, verifyPassword } = require("../utils/auth");
 
 async function ensureDefaultAdmin() {
@@ -14,6 +17,16 @@ async function ensureDefaultAdmin() {
     username,
     passwordHash: hashPassword(password),
   });
+}
+
+async function replaceCollection(Model, docs) {
+  await Model.deleteMany({});
+
+  if (!Array.isArray(docs) || docs.length === 0) {
+    return;
+  }
+
+  await Model.collection.insertMany(docs);
 }
 
 exports.login = async (req, res, next) => {
@@ -45,4 +58,69 @@ exports.me = (req, res) => {
       username: req.admin.username,
     },
   });
+};
+
+exports.backupDatabase = async (req, res, next) => {
+  try {
+    const [samples, suppliers, counters] = await Promise.all([
+      Sample.find({}).sort({ createdAt: -1 }).lean(),
+      Supplier.find({}).sort({ name: 1 }).lean(),
+      Counter.find({}).sort({ key: 1 }).lean(),
+    ]);
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      app: "Kanpur Laboratory",
+      version: 1,
+      exportedBy: req.admin.username,
+      database: "kanpur_lab",
+      counts: {
+        samples: samples.length,
+        suppliers: suppliers.length,
+        counters: counters.length,
+      },
+      data: {
+        samples,
+        suppliers,
+        counters,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.restoreDatabase = async (req, res, next) => {
+  try {
+    const backup = req.body;
+    const backupData = backup?.data || {};
+    const samples = Array.isArray(backupData.samples) ? backupData.samples : null;
+    const suppliers = Array.isArray(backupData.suppliers) ? backupData.suppliers : null;
+    const counters = Array.isArray(backupData.counters) ? backupData.counters : null;
+
+    if (!samples || !suppliers || !counters) {
+      return res.status(400).json({
+        message: "Invalid backup file. Expected samples, suppliers, and counters arrays.",
+      });
+    }
+
+    await Promise.all([
+      replaceCollection(Sample, samples),
+      replaceCollection(Supplier, suppliers),
+      replaceCollection(Counter, counters),
+    ]);
+
+    res.json({
+      message: "Database restored successfully.",
+      restoredAt: new Date().toISOString(),
+      restoredBy: req.admin.username,
+      counts: {
+        samples: samples.length,
+        suppliers: suppliers.length,
+        counters: counters.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
