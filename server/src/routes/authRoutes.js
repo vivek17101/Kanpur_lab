@@ -1,10 +1,12 @@
 const express = require("express");
-const { login, me } = require("../controllers/authController");
+const { backupDatabase, login, me, restoreDatabase } = require("../controllers/authController");
 const requireAdmin = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.post("/login", login);
 router.get("/me", requireAdmin, me);
+router.get("/backup", requireAdmin, backupDatabase);
+router.post("/restore", requireAdmin, restoreDatabase);
 
 module.exports = router;

@@ -18,22 +18,13 @@ export default function SampleDetails({ ...restProps }) {
 
   const [suggestions, setSuggestions] = useState([]);
 
-  const names = [
-    "Vivek Gupta",
-    "Vimal",
-    "Vikrant",
-    "Vicky",
-    "Vasundhara",
-    "Vivekansh",
-  ];
-
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
     CO: "C/o cannot be empty!",
     toMs: "To M/s cannot be empty!",
     dated: "Dated field should be filled",
     dateOfTest: "Date field should be filled",
-    reference: "Nature of Sample cannot be empty!",
+    reference: "Sample Type cannot be empty!",
   };
 
   const checkValidity = (id, value) => {
@@ -52,14 +43,7 @@ export default function SampleDetails({ ...restProps }) {
     checkValidity(id, value);
 
     if (id === "name") {
-      if (value) {
-        const filteredNames = names.filter((name) =>
-          name.toLowerCase().startsWith(value.toLowerCase())
-        );
-        setSuggestions(filteredNames);
-      } else {
-        setSuggestions([]);
-      }
+      setSuggestions([]);
     }
 
     dispatch({
@@ -144,10 +128,10 @@ export default function SampleDetails({ ...restProps }) {
           onChange={onInputChange}
         />
         <InputField
-          name="Nature of Sample"
-          label="Nature of Sample"
+          name="Sample Type"
+          label="Sample Type"
           value={sampleDetails.reference}
-          placeholder="Enter Nature of Sample"
+          placeholder="Enter Sample Type"
           id="reference"
           error={isValid.reference.status}
           errorMessage={isValid.reference.message}

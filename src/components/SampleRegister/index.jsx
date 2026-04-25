@@ -17,7 +17,18 @@ import Report, {
 } from "../Report";
 import styles from "./SampleRegister.module.css";
 
+const SAMPLE_TYPES = [
+  "Rice Bran",
+  "Cotton Seed",
+  "Cotton Cake",
+  "Mustard Seeds",
+  "Mustard Cake",
+  "DOC",
+  "Dal",
+];
+
 const emptyForm = {
+  sampleNo: "",
   supplierName: "",
   CO: "",
   toMs: "",
@@ -74,10 +85,11 @@ function escapeHtml(value) {
 function getRegisterRows(samples) {
   return samples.map((sample) => ({
     "Report No.": sample.reportNumber || "",
+    "Sample No.": sample.sampleNo || "",
     Supplier: sample.supplierName || "",
     "C/o": sample.CO || "",
     "To M/s": sample.toMs || "",
-    Reference: sample.sampleReference || "",
+    "Sample Type": sample.sampleReference || "",
     "Date of Seal": formatDate(sample.dateOfSeal),
     "Received Date": formatDate(sample.dateReceived),
     "Date of Test": formatDate(sample.dateOfTest),
@@ -189,6 +201,24 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
       .sort((a, b) => a.localeCompare(b));
   }, [samples, suppliers]);
 
+  const sampleTypeOptions = useMemo(() => {
+    const savedSampleTypes = samples
+      .map((sample) => sample.sampleReference)
+      .filter((type) => type && !SAMPLE_TYPES.includes(type));
+
+    return [...new Set([...SAMPLE_TYPES, ...savedSampleTypes])]
+      .sort((a, b) => a.localeCompare(b));
+  }, [samples]);
+
+
+  const testNameOptions = useMemo(() => {
+    const baseTests = labData.map((test) => test.name);
+    const savedTests = testRows.map((test) => test.name);
+
+    return [...new Set([...baseTests, ...savedTests].filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+  }, [testRows]);
+
   const selectedSupplier = useMemo(() => {
     if (!selectedSample?.supplierName) {
       return null;
@@ -288,6 +318,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
       setMessage("Sample entry saved.");
       setSelectedSample(createdSample);
       setSampleFields({
+        sampleNo: createdSample.sampleNo || "",
         supplierName: createdSample.supplierName || "",
         CO: createdSample.CO || "",
         toMs: createdSample.toMs || "",
@@ -315,6 +346,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
       const sample = await getSample(id);
       setSelectedSample(sample);
       setSampleFields({
+        sampleNo: sample.sampleNo || "",
         supplierName: sample.supplierName || "",
         CO: sample.CO || "",
         toMs: sample.toMs || "",
@@ -336,7 +368,15 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
   const handleTestChange = (index, field, value) => {
     setTestRows((current) =>
       current.map((test, itemIndex) =>
-        itemIndex === index ? { ...test, [field]: value } : test
+        itemIndex === index
+          ? {
+              ...test,
+              [field]: value,
+              ...(field === "name"
+                ? { unit: labData.find((item) => item.name === value)?.unit || test.unit }
+                : {}),
+            }
+          : test
       )
     );
   };
@@ -382,8 +422,9 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     const tests = testRows
       .filter((test) => test.name.trim())
       .map((test) => ({
-        ...test,
         name: test.name.trim(),
+        value: test.value || "",
+        unit: test.unit || "",
       }));
 
     try {
@@ -527,7 +568,16 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                 <option value={supplier} key={supplier} />
               ))}
             </datalist>
+            <datalist id="sample-type-options">
+              {sampleTypeOptions.map((sampleType) => (
+                <option value={sampleType} key={sampleType} />
+              ))}
+            </datalist>
             <div className={styles.grid}>
+              <label className={styles.field}>
+                <span>Sample No.</span>
+                <input name="sampleNo" value={form.sampleNo} onChange={handleFormChange} />
+              </label>
               <label className={styles.field}>
                 <span>Supplier Name</span>
                 <input list="supplier-master-options" name="supplierName" value={form.supplierName} onChange={handleFormChange} required />
@@ -541,8 +591,15 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                 <input name="toMs" value={form.toMs} onChange={handleFormChange} />
               </label>
               <label className={styles.field}>
-                <span>Sample Reference</span>
-                <input name="sampleReference" value={form.sampleReference} onChange={handleFormChange} required />
+                <span>Sample Type</span>
+                <input
+                  list="sample-type-options"
+                  name="sampleReference"
+                  value={form.sampleReference}
+                  onChange={handleFormChange}
+                  placeholder="Select or type sample type"
+                  required
+                />
               </label>
               <label className={styles.field}>
                 <span>Date of Seal</span>
@@ -585,7 +642,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
             <div className={styles.toolbarActions}>
               <label className={styles.field}>
                 <span>Search</span>
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Report no., supplier, reference" />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Report no., sample no., supplier, sample type" />
               </label>
               <label className={styles.field}>
                 <span>Status</span>
@@ -626,8 +683,9 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               <thead>
                 <tr>
                   <th>Report No.</th>
+                  <th>Sample No.</th>
                   <th>Supplier</th>
-                  <th>Reference</th>
+                  <th>Sample Type</th>
                   <th>Received Date</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -635,13 +693,14 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan="6">Loading samples...</td></tr>
+                  <tr><td colSpan="7">Loading samples...</td></tr>
                 ) : samples.length === 0 ? (
-                  <tr><td colSpan="6">No samples found.</td></tr>
+                  <tr><td colSpan="7">No samples found.</td></tr>
                 ) : (
                   samples.map((sample) => (
                     <tr key={sample._id}>
                       <td>{sample.reportNumber || "-"}</td>
+                      <td>{sample.sampleNo || "-"}</td>
                       <td>{sample.supplierName}</td>
                       <td>{sample.sampleReference}</td>
                       <td>{formatDate(sample.dateReceived)}</td>
@@ -675,10 +734,15 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               <option value={supplier} key={supplier} />
             ))}
           </datalist>
+          <datalist id="sample-type-options">
+            {sampleTypeOptions.map((sampleType) => (
+              <option value={sampleType} key={sampleType} />
+            ))}
+          </datalist>
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">Test Result Entry</h3>
-              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
+              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.sampleNo || "No sample no."} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
             </div>
             <Button variant="secondary" onClick={() => setView("list")}>
               <ButtonLabel label="Back to List" />
@@ -687,6 +751,10 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
           <div className={styles.detailEditor}>
             <h4 className="text--default fw-700">Sample / Report Details</h4>
             <div className={styles.grid}>
+              <label className={styles.field}>
+                <span>Sample No.</span>
+                <input name="sampleNo" value={sampleFields.sampleNo} onChange={handleSampleFieldChange} />
+              </label>
               <label className={styles.field}>
                 <span>Supplier Name</span>
                 <input list="supplier-master-options" name="supplierName" value={sampleFields.supplierName} onChange={handleSampleFieldChange} required />
@@ -700,8 +768,15 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                 <input name="toMs" value={sampleFields.toMs} onChange={handleSampleFieldChange} />
               </label>
               <label className={styles.field}>
-                <span>Sample Reference</span>
-                <input name="sampleReference" value={sampleFields.sampleReference} onChange={handleSampleFieldChange} required />
+                <span>Sample Type</span>
+                <input
+                  list="sample-type-options"
+                  name="sampleReference"
+                  value={sampleFields.sampleReference}
+                  onChange={handleSampleFieldChange}
+                  placeholder="Select or type sample type"
+                  required
+                />
               </label>
               <label className={styles.field}>
                 <span>Date of Seal</span>
@@ -741,26 +816,24 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                   <th>Test</th>
                   <th>Value</th>
                   <th>Unit</th>
-                  <th>Reference Value</th>
                 </tr>
               </thead>
               <tbody>
                 {testRows.map((test, index) => (
                   <tr key={`${test.name}-${index}`}>
                     <td>
-                      <input value={test.name} onChange={(event) => handleTestChange(index, "name", event.target.value)} />
+                      <select value={test.name} onChange={(event) => handleTestChange(index, "name", event.target.value)}>
+                        <option value="">Select Test</option>
+                        {testNameOptions.map((testName) => (
+                          <option value={testName} key={testName}>{testName}</option>
+                        ))}
+                      </select>
                     </td>
                     <td>
                       <input value={test.value} onChange={(event) => handleTestChange(index, "value", event.target.value)} placeholder="Enter value" />
                     </td>
                     <td>
                       <input value={test.unit} onChange={(event) => handleTestChange(index, "unit", event.target.value)} />
-                    </td>
-                    <td>
-                      <input
-                        value={Array.isArray(test.referenceValue) ? test.referenceValue.join(", ") : test.referenceValue}
-                        onChange={(event) => handleTestChange(index, "referenceValue", event.target.value)}
-                      />
                     </td>
                   </tr>
                 ))}
@@ -786,7 +859,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">PDF Report</h3>
-              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
+              <p className={styles.muted}>{selectedSample.reportNumber || "Unnumbered"} / {selectedSample.sampleNo || "No sample no."} / {selectedSample.supplierName} / {selectedSample.sampleReference}</p>
               <p className={styles.muted}>
                 WhatsApp: {selectedSupplierWhatsApp ? `+${selectedSupplierWhatsApp}` : "No supplier number saved"}
               </p>

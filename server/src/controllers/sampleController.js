@@ -45,6 +45,7 @@ function buildSampleFilter(query) {
   if (search) {
     filter.$or = [
       { reportNumber: { $regex: search, $options: "i" } },
+      { sampleNo: { $regex: search, $options: "i" } },
       { supplierName: { $regex: search, $options: "i" } },
       { sampleReference: { $regex: search, $options: "i" } },
       { CO: { $regex: search, $options: "i" } },
@@ -78,6 +79,7 @@ exports.createSample = async (req, res, next) => {
     const reportMeta = await getNextReportNumber(req.body.dateReceived);
     const sample = await Sample.create({
       ...reportMeta,
+      sampleNo: req.body.sampleNo,
       supplierName: req.body.supplierName,
       CO: req.body.CO,
       toMs: req.body.toMs,
