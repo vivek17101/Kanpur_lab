@@ -207,7 +207,7 @@ async function startServer() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 800, show: false,
-    icon: path.join(__dirname, '../build/KanpurLab_AppLogo.png'),
+    icon: path.join(__dirname, '../build/KanpurLab_AppLogo192.png'),
     webPreferences: { nodeIntegration: false }
   })
   mainWindow.loadFile(path.join(__dirname, '../build/index.html'))

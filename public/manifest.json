@@ -8,12 +8,12 @@
       "type": "image/x-icon"
     },
     {
-      "src": "KanpurLab_AppLogo.png",
+      "src": "KanpurLab_AppLogo192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "KanpurLab_AppLogo.png",
+      "src": "KanpurLab_AppLogo512.png",
       "type": "image/png",
       "sizes": "512x512"
     }

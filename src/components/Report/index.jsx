@@ -1,15 +1,15 @@
 /**
- * Report/index.jsx — html2canvas + jsPDF  (v6)
+ * Report/index.jsx — html2canvas + jsPDF  (v8)
  *
- * CHANGES FROM v5:
+ * CHANGES FROM v7:
  * ─────────────────────────────────────────────────────────────────────
- * [FIX]    numberToWords — removed hardcoded " percent" suffix; percent
- *          word only appended when unit is explicitly "%"
- * [STYLE]  testValueWords color darkened #555 → #333 for print clarity
- * [LAYOUT] Opinion & Fee Charged rows visually separated from test rows
- *          with thicker top border, extra padding, italic label style
- * [LAYOUT] minHeight 1083px → 1123px + test row padding 3px → 5px +
- *          flex spacer pushes footer to bottom — fills A4 properly
+ * [FIX]    testRow alignItems flex-start → center
+ * [FIX]    testName paddingTop removed, display:flex alignItems:center
+ * [FIX]    testValueLine justifyContent flex-end → center
+ * [FIX]    summaryRow alignItems flex-start → center
+ * [FIX]    summaryName paddingTop removed, display:flex alignItems:center
+ *          Result: name label and dotted value line are vertically
+ *          centered and consistent across filled & empty rows
  * ─────────────────────────────────────────────────────────────────────
  */
 import { useMemo, useState, useCallback, useEffect } from "react";
@@ -69,7 +69,6 @@ function intToWords(n) {
   return String(n);
 }
 
-// FIX: "percent" only appended when isPercent=true (unit is "%")
 export function numberToWords(value, isPercent = false) {
   if (value === "" || value === null || value === undefined) return "";
   const str   = String(value).trim();
@@ -116,7 +115,7 @@ export function getReportDataFromSample(sample, fallbackTests = []) {
 const S = {
   page: {
     width: "794px",
-    minHeight: "1123px",           // FIX: was 1083px — matches A4 at 96dpi
+    minHeight: "1123px",
     backgroundColor: "#fff",
     fontFamily: "'Noto Sans', 'Mangal', Arial, sans-serif",
     fontSize: "10px",
@@ -137,12 +136,12 @@ const S = {
     position: "relative",
     boxSizing: "border-box",
     minHeight: "1079px",
-    display: "flex",               // FIX: flex column so spacer can push footer down
+    display: "flex",
     flexDirection: "column",
   },
   watermark: {
     position: "absolute",
-    top: "70%",
+    top: "60%",
     left: "50%",
     transform: "translate(-50%, -50%)",
     opacity: 0.12,
@@ -158,7 +157,8 @@ const S = {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "4px",
+    marginTop: "8px",        // pushes "Test Report" title down slightly
+    marginBottom: "10px",
     position: "relative",
     zIndex: 1,
   },
@@ -181,7 +181,7 @@ const S = {
   logoImg:   { width: "70px", height: "50px", objectFit: "contain" },
   phoneBlock: {
     textAlign: "right",
-    fontSize: "8.5px",
+    fontSize: "10px",
     fontWeight: "bold",
     lineHeight: "1.8",
     whiteSpace: "nowrap",
@@ -191,9 +191,9 @@ const S = {
   // ── Brand banner ────────────────────────────────────────────────────
   brandBox: {
     backgroundColor: RED,
-    padding: "6px 8px",
-    marginBottom: "5px",
-    marginTop: "4px",
+    padding: "8px 8px",      // increased from 6px
+    marginBottom: "8px",     // increased from 5px
+    marginTop: "6px",        // increased from 4px
     textAlign: "center",
     position: "relative",
     zIndex: 1,
@@ -218,11 +218,11 @@ const S = {
     position: "relative",
     zIndex: 1,
   },
-  consultantText: { fontSize: "11.5px", fontWeight: "bold" },
+  consultantText: { fontSize: "13px", fontWeight: "bold" },
   datedRow:       { display: "flex", alignItems: "baseline", gap: "4px" },
-  datedLabel:     { fontSize: "9.5px", fontWeight: "bold" },
+  datedLabel:     { fontSize: "11px", fontWeight: "bold" },
   datedValue: {
-    fontSize: "9.5px",
+    fontSize: "11px",
     borderBottom: "1px dotted #999",
     minWidth: "80px",
     paddingBottom: "1px",
@@ -230,9 +230,9 @@ const S = {
   address: {
     textAlign: "center",
     color: RED,
-    fontSize: "9.5px",
+    fontSize: "11px",
     fontWeight: "bold",
-    marginBottom: "6px",
+    marginBottom: "12px",
     position: "relative",
     zIndex: 1,
   },
@@ -241,19 +241,19 @@ const S = {
   fieldRow: {
     display: "flex",
     alignItems: "flex-end",
-    marginBottom: "6px",
+    marginBottom: "12px",    // increased from 6px
     gap: "3px",
     position: "relative",
     zIndex: 1,
   },
-  fieldLabel:     { fontSize: "9.5px", fontWeight: "bold", whiteSpace: "nowrap" },
+  fieldLabel:     { fontSize: "11px", fontWeight: "bold", whiteSpace: "nowrap" },
   fieldValueLine: {
     borderBottom: "1px dotted #888",
     flexGrow: 1,
     minHeight: "14px",
     paddingBottom: "1px",
   },
-  fieldValue: { fontSize: "9.5px", fontWeight: "bold", color: DKRED },
+  fieldValue: { fontSize: "11px", fontWeight: "bold", color: DKRED },
 
   // ── Table ────────────────────────────────────────────────────────────
   table: {
@@ -275,61 +275,68 @@ const S = {
     backgroundColor: "transparent",
     borderBottom: "1px solid #000",
   },
-  col0: { width: "34%", padding: "4px 6px", fontSize: "8.5px", boxSizing: "border-box" },
+  col0: { width: "34%", padding: "6px 6px", fontSize: "10px", boxSizing: "border-box" },
   col1: {
     width: "33%",
-    padding: "4px 6px",
-    fontSize: "8.5px",
+    padding: "6px 6px",
+    fontSize: "10px",
     borderLeft: "1px solid #000",
     borderRight: "1px solid #000",
     boxSizing: "border-box",
   },
-  col2: { width: "33%", padding: "4px 6px", fontSize: "8.5px", boxSizing: "border-box" },
-  colTitle:    { fontWeight: "bold", fontSize: "9.5px" },
-  colTitleRed: { fontWeight: "bold", fontSize: "9.5px", color: RED, textAlign: "center", display: "block" },
-  colSubTitle: { fontWeight: "bold", fontSize: "8px",   color: RED, textAlign: "center", display: "block" },
+  col2: { width: "33%", padding: "6px 6px", fontSize: "10px", boxSizing: "border-box" },
+  colTitle:    { fontWeight: "bold", fontSize: "11px" },
+  colTitleRed: { fontWeight: "bold", fontSize: "11px", color: RED, textAlign: "center", display: "block" },
+  colSubTitle: { fontWeight: "bold", fontSize: "9.5px", color: RED, textAlign: "center", display: "block" },
 
   // ── Test rows ────────────────────────────────────────────────────────
   testRow: {
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",    // vertically centers name & value on same baseline
     borderBottom: "0.5px solid #DDDDDD",
-    padding: "5px 6px",            // FIX: 3px → 5px for better A4 fill
+    padding: "10px 6px",
     position: "relative",
     zIndex: 1,
   },
   testRowAlt:  { backgroundColor: "transparent" },
-  testName:    { width: "34%", fontSize: "9px", flexShrink: 0, paddingTop: "2px" },
+  testName: {
+    width: "22%",            // reduced from 34% — value starts close after name
+    fontSize: "11px",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+  },
   testValueLine: {
     borderBottom: "1px dotted #999",
     flexGrow: 1,
-    minHeight: "16px",
+    minHeight: "24px",
     paddingBottom: "1px",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-end",
+    justifyContent: "center",
   },
-  testValue:      { fontSize: "9px", fontWeight: "bold", color: RED },
-  testValueWords: { fontSize: "7.5px", color: "#333", fontStyle: "italic", marginTop: "1px" }, // FIX: #555 → #333
+  testValue:      { fontSize: "11px", fontWeight: "bold", color: RED },
+  testValueWords: { fontSize: "11px", color: "#333", fontStyle: "italic", marginTop: "1px" },
 
   // ── Opinion / Fee rows — visually separated ───────────────────────────
   summaryRow: {
     display: "flex",
-    alignItems: "flex-start",
-    borderTop: "1.5px solid #aaa",  // FIX: thick top border separates from test list
+    alignItems: "center",    // consistent with testRow
+    borderTop: "1.5px solid #aaa",
     borderBottom: "0.5px solid #DDDDDD",
-    padding: "6px 6px",
+    padding: "14px 6px",
     position: "relative",
     zIndex: 1,
     backgroundColor: "#fafafa",
   },
   summaryName: {
-    width: "34%",
-    fontSize: "9px",
+    width: "22%",            // matches testName width
+    fontSize: "11px",
     flexShrink: 0,
-    paddingTop: "2px",
     fontStyle: "italic",
     color: "#444",
+    display: "flex",
+    alignItems: "center",
   },
   summaryValueLine: {
     borderBottom: "1px dotted #bbb",
@@ -351,7 +358,7 @@ const S = {
   },
   noteText: {
     color: "#fff",
-    fontSize: "8px",
+    fontSize: "10px",
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -365,7 +372,7 @@ const S = {
     zIndex: 1,
     position: "relative",
   },
-  hindiText: { fontSize: "9.5px", width: "60%", lineHeight: "1.8" },
+  hindiText: { fontSize: "11.5px", width: "60%", lineHeight: "1.8" },
   signatureBlock: {
     display: "flex",
     flexDirection: "column",
@@ -411,7 +418,6 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
   }));
   const customRows = storedTests.filter((t) => !labData.some((item) => item.name === t.name));
 
-  // FIX: Opinion & Fee separated into summaryRows with different styling
   const testRows    = [...baseRows, ...customRows];
   const summaryRows = [
     { id: "opinion", name: "Opinion" },
@@ -469,8 +475,8 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
           {/* Fields */}
           <DotField label="Report No."       value={reportData.reportNumber} />
           <DotField label="Supplied by M/s." value={reportData.supplierName} />
-          <div style={{ display: "flex", gap: "10px", marginBottom: "6px", zIndex: 1, position: "relative" }}>
-            <DotField label="C/o."              value={reportData.CO}              style={{ width: "52%", marginBottom: 0 }} />
+          <div style={{ display: "flex", gap: "10px", marginBottom: "12px", zIndex: 1, position: "relative" }}>
+            <DotField label="C/o."         value={reportData.CO}             style={{ width: "52%", marginBottom: 0 }} />
             <DotField label="Sample Type:" value={reportData.sampleReference} style={{ width: "46%", marginBottom: 0 }} />
           </div>
           <DotField label="To M/s." value={reportData.toMs} />
@@ -517,7 +523,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
             );
           })}
 
-          {/* FIX: Opinion & Fee — separated visually with thicker border + italic label */}
+          {/* Opinion & Fee — visually separated */}
           {summaryRows.map((row) => (
             <div key={row.id} style={S.summaryRow}>
               <div style={S.summaryName}>{row.name}</div>
@@ -525,7 +531,7 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
             </div>
           ))}
 
-          {/* FIX: Spacer pushes note bar and footer to bottom of A4 */}
+          {/* Spacer pushes note bar and footer to bottom of A4 */}
           <div style={S.spacer} />
 
           {/* Note bar */}

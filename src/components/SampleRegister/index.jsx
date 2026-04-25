@@ -191,13 +191,24 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
       .sort((a, b) => a.localeCompare(b));
   }, [samples, suppliers]);
 
-  const sampleTypeOptions = useMemo(() => {
-    const testParameters = labData.map((test) => test.name);
-    const savedSampleTypes = samples.map((sample) => sample.sampleReference);
+  const SAMPLE_TYPES = [
+    "Rice Bran",
+    "Cotton Seed",
+    "Cotton Cake",
+    "Mustard Seeds",
+    "Mustard Cake",
+    "DOC",
+    "Dal",
+  ];
 
-    return [...new Set([...testParameters, ...savedSampleTypes].filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b));
+  const sampleTypeOptions = useMemo(() => {
+    const savedSampleTypes = samples
+      .map((sample) => sample.sampleReference)
+      .filter((type) => type && !SAMPLE_TYPES.includes(type));
+
+    return [...new Set([...SAMPLE_TYPES, ...savedSampleTypes])];
   }, [samples]);
+
 
   const testNameOptions = useMemo(() => {
     const baseTests = labData.map((test) => test.name);
