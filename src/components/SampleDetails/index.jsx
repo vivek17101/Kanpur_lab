@@ -18,15 +18,6 @@ export default function SampleDetails({ ...restProps }) {
 
   const [suggestions, setSuggestions] = useState([]);
 
-  const names = [
-    "Vivek Gupta",
-    "Vimal",
-    "Vikrant",
-    "Vicky",
-    "Vasundhara",
-    "Vivekansh",
-  ];
-
   const errorMessages = {
     name: "Supplied by M/s cannot be empty!",
     CO: "C/o cannot be empty!",
@@ -52,14 +43,7 @@ export default function SampleDetails({ ...restProps }) {
     checkValidity(id, value);
 
     if (id === "name") {
-      if (value) {
-        const filteredNames = names.filter((name) =>
-          name.toLowerCase().startsWith(value.toLowerCase())
-        );
-        setSuggestions(filteredNames);
-      } else {
-        setSuggestions([]);
-      }
+      setSuggestions([]);
     }
 
     dispatch({
