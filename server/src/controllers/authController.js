@@ -26,7 +26,7 @@ async function replaceCollection(Model, docs) {
     return;
   }
 
-  await Model.collection.insertMany(docs);
+  await Model.insertMany(docs);
 }
 
 exports.login = async (req, res, next) => {
