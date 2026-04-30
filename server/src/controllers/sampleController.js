@@ -104,9 +104,24 @@ exports.createSample = async (req, res, next) => {
 exports.getSamples = async (req, res, next) => {
   try {
     const filter = buildSampleFilter(req.query);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
 
-    const samples = await Sample.find(filter).sort({ createdAt: -1 });
-    res.json(samples);
+    const [samples, total] = await Promise.all([
+      Sample.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Sample.countDocuments(filter),
+    ]);
+
+    res.json({
+      samples,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     next(error);
   }
