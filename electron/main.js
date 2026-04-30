@@ -3,6 +3,7 @@ const { spawn, execSync, spawnSync } = require('child_process')
 const path = require('path')
 const net = require('net')
 const fs = require('fs')
+const crypto = require('crypto')
 
 let serverProcess, mainWindow, loadingWindow
 
@@ -17,6 +18,72 @@ if (!gotLock) {
     }
   })
 }
+
+// ---------------------------------------------------------------------------
+// ENV management
+// In production: reads/creates server.env in the writable userData directory
+// so it survives app updates and is not locked inside the asar archive.
+// In development: uses server/.env directly.
+// On first launch AUTH_SECRET is auto-generated — unique per installation.
+// ---------------------------------------------------------------------------
+
+function getEnvPath() {
+  if (app.isPackaged) {
+    return path.join(app.getPath('userData'), 'server.env')
+  }
+  return path.join(__dirname, '..', 'server', '.env')
+}
+
+function loadOrCreateEnv() {
+  const envPath = getEnvPath()
+
+  if (!fs.existsSync(envPath)) {
+    const secret = crypto.randomBytes(48).toString('hex')
+    const contents = [
+      `AUTH_SECRET=${secret}`,
+      `ADMIN_USERNAME=admin`,
+      `ADMIN_PASSWORD=admin123`,
+      `PORT=5000`,
+      `MONGODB_URI=mongodb://127.0.0.1:27017/kanpur_lab`,
+      `CLIENT_ORIGIN=http://localhost:3000`,
+    ].join('\n') + '\n'
+
+    try {
+      fs.mkdirSync(path.dirname(envPath), { recursive: true })
+      fs.writeFileSync(envPath, contents, { encoding: 'utf8', mode: 0o600 })
+    } catch (err) {
+      dialog.showErrorBox(
+        'Setup error',
+        `Could not write configuration file.\nPath: ${envPath}\n\n${err.message}`
+      )
+      app.quit()
+      return {}
+    }
+  }
+
+  const parsed = {}
+  try {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n')
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const idx = trimmed.indexOf('=')
+      if (idx === -1) continue
+      parsed[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim()
+    }
+  } catch (err) {
+    dialog.showErrorBox(
+      'Config read error',
+      `Could not read configuration file.\nPath: ${envPath}\n\n${err.message}`
+    )
+    app.quit()
+    return {}
+  }
+
+  return parsed
+}
+
+// ---------------------------------------------------------------------------
 
 function findNode() {
   try {
@@ -145,7 +212,7 @@ function ensureServerDeps(serverDir, npmPath) {
   return true
 }
 
-async function startServer() {
+async function startServer(envVars) {
   setStatus('Checking port 5000...', 10)
   if (!(await isPortFree(5000))) {
     setStatus('Server already running', 70)
@@ -174,11 +241,12 @@ async function startServer() {
   serverProcess = spawn(nodePath, [serverScript], {
     env: {
       ...process.env,
-      PORT: '5000',
-      MONGODB_URI: 'mongodb://127.0.0.1:27017/kanpur_lab',
-      AUTH_SECRET: 'kanpur-lab-secret-key',
-      ADMIN_USERNAME: 'admin',
-      ADMIN_PASSWORD: 'admin123'
+      PORT:           envVars.PORT           || '5000',
+      MONGODB_URI:    envVars.MONGODB_URI    || 'mongodb://127.0.0.1:27017/kanpur_lab',
+      CLIENT_ORIGIN:  envVars.CLIENT_ORIGIN  || 'http://localhost:3000',
+      AUTH_SECRET:    envVars.AUTH_SECRET,
+      ADMIN_USERNAME: envVars.ADMIN_USERNAME || 'admin',
+      ADMIN_PASSWORD: envVars.ADMIN_PASSWORD || 'admin123',
     },
     stdio: 'pipe'
   })
@@ -223,7 +291,11 @@ app.whenReady().then(async () => {
   if (!gotLock) return
   createLoadingWindow()
   setStatus('Starting up...', 5)
-  const ok = await startServer()
+
+  const envVars = loadOrCreateEnv()
+  if (!envVars.AUTH_SECRET) return // loadOrCreateEnv already called app.quit()
+
+  const ok = await startServer(envVars)
   if (!ok) { app.quit(); return }
   setStatus('Loading app...', 90)
   createWindow()

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+﻿import { useMemo, useState, useCallback, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import labData from "../../data/labTests";
@@ -180,8 +180,8 @@ const S = {
     color: "#fff",
     fontSize: "26px",
     fontWeight: "900",
-    letterSpacing: "3px",
-    fontFamily: "Impact, 'Arial Black', Arial, sans-serif",
+    letterSpacing: "2px",
+    fontFamily: "'Segoe UI Black', 'Arial Black', 'Impact', sans-serif",
     WebkitTextStroke: "0.5px rgba(255,255,255,0.4)",
     textShadow: "1px 1px 0 rgba(0,0,0,0.3)",
     fontStyle: "italic",
@@ -216,7 +216,7 @@ const S = {
     display: "flex",
     alignItems: "flex-end",
     marginBottom: "12px",    
-    gap: "3px",
+    gap: "8px",
     position: "relative",
     zIndex: 1,
   },
@@ -260,6 +260,8 @@ const S = {
   colTitle:    { fontWeight: "bold", fontSize: "11px" },
   colTitleRed: { fontWeight: "bold", fontSize: "11px", color: RED, textAlign: "center", display: "block" },
   colSubTitle: { fontWeight: "bold", fontSize: "9.5px", color: RED, textAlign: "center", display: "block" },
+  tableSubLabel: { fontSize: "10px", fontWeight: "bold", color: "#000" },
+  tableSubValue: { fontSize: "10px", fontWeight: "bold", color: DKRED, marginLeft: "8px" },
   testRow: {
     display: "flex",
     alignItems: "center",    
@@ -285,8 +287,8 @@ const S = {
     flexDirection: "column",
     justifyContent: "center",
   },
-  testValue:      { fontSize: "11px", fontWeight: "bold", color: RED },
-  testValueWords: { fontSize: "11px", color: "#333", fontStyle: "italic", marginTop: "1px" },
+  testValue:      { fontSize: "13px", fontWeight: "bold", color: RED },
+  testValueWords: { fontSize: "13px", color: "#333", fontStyle: "italic", marginTop: "1px" },
   summaryRow: {
     display: "flex",
     alignItems: "center",    
@@ -437,14 +439,34 @@ export function ReportTemplate({ reportData, innerRef, logoSrc, waterMarkSrc, sw
               <div style={S.col2}><span style={S.colSubTitle}>Sample Not Drawn By Kanpur Laboratory</span></div>
             </div>
             <div style={S.tableSubRow}>
-              <div style={S.col0}>Code No./S.No. {reportData.sampleNo || reportData.reportNumber || "...................."}</div>
-              <div style={S.col1}>Date of Seal {reportData.dateOfSeal || "...................."}</div>
-              <div style={S.col2}>Received on {reportData.dateReceived || "...................."}</div>
+              <div style={S.col0}>
+                <span style={S.tableSubLabel}>Code No./S.No.</span>
+                <span style={S.tableSubValue}>{reportData.sampleNo || reportData.reportNumber || "...................."}</span>
+              </div>
+              <div style={S.col1}>
+                <span style={S.tableSubLabel}>Date of Seal</span>
+                <span style={S.tableSubValue}>{reportData.dateOfSeal || "...................."}</span>
+              </div>
+              <div style={S.col2}>
+                <span style={S.tableSubLabel}>Received on</span>
+                <span style={S.tableSubValue}>{reportData.dateReceived || "...................."}</span>
+              </div>
             </div>
             <div style={{ ...S.tableSubRow, borderBottom: "none" }}>
-              <div style={S.col0}>Lorry No. {reportData.lorryNo || "...................."}</div>
-              <div style={S.col1}>Bags {reportData.bags || "........"} Wt. {reportData.weight || "........"}</div>
-              <div style={S.col2}>Con. of Sample {reportData.conditionOfSample || "........"}</div>
+              <div style={S.col0}>
+                <span style={S.tableSubLabel}>Lorry No.</span>
+                <span style={S.tableSubValue}>{reportData.lorryNo || "...................."}</span>
+              </div>
+              <div style={S.col1}>
+                <span style={S.tableSubLabel}>Bags</span>
+                <span style={S.tableSubValue}>{reportData.bags || "........"}</span>
+                <span style={{ ...S.tableSubLabel, marginLeft: "10px" }}>Wt.</span>
+                <span style={S.tableSubValue}>{reportData.weight || "........"}</span>
+              </div>
+              <div style={S.col2}>
+                <span style={S.tableSubLabel}>Con. of Sample</span>
+                <span style={S.tableSubValue}>{reportData.conditionOfSample || "........"}</span>
+              </div>
             </div>
           </div>
           {testRows.map((test, i) => {

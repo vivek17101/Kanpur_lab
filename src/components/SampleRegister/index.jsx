@@ -14,6 +14,7 @@ import Report, {
   getReportDataFromSample,
   ReportDownloadLink,
   generatePDFBlob,
+  useReportAssets,
 } from "../Report";
 import styles from "./SampleRegister.module.css";
 
@@ -134,6 +135,8 @@ function normalizeWhatsAppNumber(value) {
 export default function SampleRegister({ suppliersVersion = 0 }) {
   const [form, setForm] = useState(emptyForm);
   const [samples, setSamples] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, totalPages: 1 });
+  const [page, setPage] = useState(1);
   const [suppliers, setSuppliers] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -158,19 +161,20 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     setError("");
 
     try {
-      const filterParams = { search, status: statusFilter, startDate, endDate };
+      const filterParams = { search, status: statusFilter, startDate, endDate, page, limit: 50 };
       const [data, summary] = await Promise.all([
         getSamples(filterParams),
         getSampleStats({ search, startDate, endDate }),
       ]);
-      setSamples(data);
+      setSamples(data.samples);
+      setPagination(data.pagination);
       setStats(summary);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  }, [endDate, search, startDate, statusFilter]);
+  }, [endDate, search, startDate, statusFilter, page]);
 
   useEffect(() => {
     loadSamples();
@@ -193,6 +197,8 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     () => getReportDataFromSample(selectedSample),
     [selectedSample]
   );
+
+  const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
 
   const supplierOptions = useMemo(() => {
     const historicalSuppliers = samples.map((sample) => sample.supplierName);
@@ -244,6 +250,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     setStatusFilter("");
     setStartDate("");
     setEndDate("");
+    setPage(1);
   };
 
   const handleExportCsv = () => {
@@ -486,7 +493,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     }
 
     const fileName = `${(reportData.reportNumber || reportData.supplierName || "sample-report").replace(/[\s/]+/g, "-")}.pdf`;
-    const blob = await generatePDFBlob(reportData);
+    const blob = await generatePDFBlob(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
     const file = new File([blob], fileName, { type: "application/pdf" });
 
     if (navigator.canShare?.({ files: [file] })) {
@@ -517,6 +524,17 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
 
   return (
     <div className={styles.shell}>
+      {/* Shared datalists — declared once at the top to avoid duplicate IDs */}
+      <datalist id="supplier-master-options">
+        {supplierOptions.map((supplier) => (
+          <option value={supplier} key={supplier} />
+        ))}
+      </datalist>
+      <datalist id="sample-type-options">
+        {sampleTypeOptions.map((sampleType) => (
+          <option value={sampleType} key={sampleType} />
+        ))}
+      </datalist>
       <section className={styles.toolbar}>
         <div>
           <h2 className="text--lg fw-700">Sample Register</h2>
@@ -563,16 +581,6 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
             <p className={styles.muted}>Fields mirror the manual register.</p>
           </div>
           <form onSubmit={handleCreateSample}>
-            <datalist id="supplier-master-options">
-              {supplierOptions.map((supplier) => (
-                <option value={supplier} key={supplier} />
-              ))}
-            </datalist>
-            <datalist id="sample-type-options">
-              {sampleTypeOptions.map((sampleType) => (
-                <option value={sampleType} key={sampleType} />
-              ))}
-            </datalist>
             <div className={styles.grid}>
               <label className={styles.field}>
                 <span>Sample No.</span>
@@ -724,21 +732,22 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               </tbody>
             </table>
           </div>
+          {pagination.totalPages > 1 && (
+            <div className={styles.pagination}>
+              <Button size="md" variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+                <ButtonLabel label="Previous" />
+              </Button>
+              <span className={styles.muted}>Page {pagination.page} of {pagination.totalPages} ({pagination.total} records)</span>
+              <Button size="md" variant="secondary" onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))} disabled={page >= pagination.totalPages}>
+                <ButtonLabel label="Next" />
+              </Button>
+            </div>
+          )}
         </section>
       )}
 
       {view === "tests" && selectedSample && (
         <section className={styles.panel}>
-          <datalist id="supplier-master-options">
-            {supplierOptions.map((supplier) => (
-              <option value={supplier} key={supplier} />
-            ))}
-          </datalist>
-          <datalist id="sample-type-options">
-            {sampleTypeOptions.map((sampleType) => (
-              <option value={sampleType} key={sampleType} />
-            ))}
-          </datalist>
           <div className={styles.panelHeader}>
             <div>
               <h3 className="text--md fw-700">Test Result Entry</h3>

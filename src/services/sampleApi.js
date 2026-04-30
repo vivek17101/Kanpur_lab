@@ -9,7 +9,7 @@ export function createSample(sample) {
 
 export function getSamples(params = {}) {
   const query = new URLSearchParams(
-    Object.entries(params).filter(([, value]) => value)
+    Object.entries(params).filter(([, value]) => value !== "" && value !== undefined && value !== null)
   );
   const queryString = query.toString();
   return request(`/samples${queryString ? `?${queryString}` : ""}`);
