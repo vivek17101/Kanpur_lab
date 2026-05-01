@@ -294,6 +294,22 @@ button {
 	display: none !important;
 }
 
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #0a132b !important;
+  box-shadow: 0 0 0 3px rgba(10, 19, 43, 0.12);
+}
+
 .footer {
 	position: sticky;
 	z-index: 100;
