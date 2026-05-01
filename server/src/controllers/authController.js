@@ -34,7 +34,7 @@ exports.login = async (req, res, next) => {
     await ensureDefaultAdmin();
 
     const username = String(req.body.username || "").toLowerCase().trim();
-    const password = String(req.body.password || "");
+    const password = String(req.body.password || "").trim();
     const admin = await Admin.findOne({ username });
 
     if (!admin || !verifyPassword(password, admin.passwordHash)) {
@@ -58,14 +58,16 @@ exports.me = (req, res) => {
 
 exports.changePassword = async (req, res, next) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const currentPassword = String(req.body.currentPassword || "").trim();
+    const newPassword = String(req.body.newPassword || "").trim();
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "Current password and new password are required." });
     }
     if (newPassword.length < 8) {
       return res.status(400).json({ message: "New password must be at least 8 characters." });
     }
-    const admin = await Admin.findById(req.admin._id);
+    const adminId = req.admin._id || req.admin.id;
+    const admin = await Admin.findById(adminId);
     if (!admin || !verifyPassword(currentPassword, admin.passwordHash)) {
       return res.status(401).json({ message: "Current password is incorrect." });
     }

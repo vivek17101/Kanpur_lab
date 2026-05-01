@@ -9,7 +9,10 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ message: "Admin login required" });
   }
 
-  req.admin = admin;
+  req.admin = {
+    ...admin,
+    _id: admin.id,
+  };
   next();
 }
 
