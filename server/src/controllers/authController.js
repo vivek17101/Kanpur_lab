@@ -53,11 +53,28 @@ exports.login = async (req, res, next) => {
 };
 
 exports.me = (req, res) => {
-  res.json({
-    admin: {
-      username: req.admin.username,
-    },
-  });
+  res.json({ admin: { username: req.admin.username } });
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "New password must be at least 8 characters." });
+    }
+    const admin = await Admin.findById(req.admin._id);
+    if (!admin || !verifyPassword(currentPassword, admin.passwordHash)) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+    admin.passwordHash = hashPassword(newPassword);
+    await admin.save();
+    res.json({ message: "Password changed successfully." });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.backupDatabase = async (req, res, next) => {

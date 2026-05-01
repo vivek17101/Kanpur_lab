@@ -12,6 +12,13 @@ export function getCurrentAdmin() {
   return request("/auth/me");
 }
 
+export function changePassword(passwords) {
+  return request("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(passwords),
+  });
+}
+
 export function getDatabaseBackup() {
   return request("/auth/backup");
 }
