@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const testSchema = new mongoose.Schema(
   {
@@ -9,17 +9,37 @@ const testSchema = new mongoose.Schema(
     },
     value: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     unit: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     referenceValue: {
       type: mongoose.Schema.Types.Mixed,
-      default: "",
+      default: '',
+    },
+  },
+  { _id: false }
+);
+
+const activitySchema = new mongoose.Schema(
+  {
+    action: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    detail: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    at: {
+      type: Date,
+      default: Date.now,
     },
   },
   { _id: false }
@@ -42,7 +62,7 @@ const sampleSchema = new mongoose.Schema(
     },
     sampleNo: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     supplierName: {
@@ -52,12 +72,12 @@ const sampleSchema = new mongoose.Schema(
     },
     CO: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     toMs: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     sampleReference: {
@@ -77,22 +97,22 @@ const sampleSchema = new mongoose.Schema(
     },
     lorryNo: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     bags: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     weight: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     conditionOfSample: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     tests: {
@@ -101,8 +121,12 @@ const sampleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Tested", "Reported"],
-      default: "Pending",
+      enum: ['Pending', 'Tested', 'Reported'],
+      default: 'Pending',
+    },
+    activityLog: {
+      type: [activitySchema],
+      default: [],
     },
   },
   {
@@ -110,4 +134,4 @@ const sampleSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Sample", sampleSchema);
+module.exports = mongoose.model('Sample', sampleSchema);

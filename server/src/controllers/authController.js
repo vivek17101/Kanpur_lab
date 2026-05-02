@@ -1,20 +1,23 @@
-const Admin = require("../models/Admin");
-const Counter = require("../models/Counter");
-const Sample = require("../models/Sample");
-const Supplier = require("../models/Supplier");
-const { createToken, hashPassword, verifyPassword } = require("../utils/auth");
+const Admin = require('../models/Admin');
+const Counter = require('../models/Counter');
+const Sample = require('../models/Sample');
+const Supplier = require('../models/Supplier');
+const { createToken, hashPassword, verifyPassword } = require('../utils/auth');
 
 async function ensureDefaultAdmin() {
-  const username = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "admin123";
-  const existingAdmin = await Admin.findOne({ username });
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD must be set');
+  }
+  const existingAdmin = await Admin.findOne({ username: username.toLowerCase() });
 
   if (existingAdmin) {
     return existingAdmin;
   }
 
   return Admin.create({
-    username,
+    username: username.toLowerCase(),
     passwordHash: hashPassword(password),
   });
 }
@@ -33,12 +36,14 @@ exports.login = async (req, res, next) => {
   try {
     await ensureDefaultAdmin();
 
-    const username = String(req.body.username || "").toLowerCase().trim();
-    const password = String(req.body.password || "");
+    const username = String(req.body.username || '')
+      .toLowerCase()
+      .trim();
+    const password = String(req.body.password || '').trim();
     const admin = await Admin.findOne({ username });
 
     if (!admin || !verifyPassword(password, admin.passwordHash)) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     res.json({
@@ -58,20 +63,22 @@ exports.me = (req, res) => {
 
 exports.changePassword = async (req, res, next) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const currentPassword = String(req.body.currentPassword || '').trim();
+    const newPassword = String(req.body.newPassword || '').trim();
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Current password and new password are required." });
+      return res.status(400).json({ message: 'Current password and new password are required.' });
     }
     if (newPassword.length < 8) {
-      return res.status(400).json({ message: "New password must be at least 8 characters." });
+      return res.status(400).json({ message: 'New password must be at least 8 characters.' });
     }
-    const admin = await Admin.findById(req.admin._id);
+    const adminId = req.admin._id || req.admin.id;
+    const admin = await Admin.findById(adminId);
     if (!admin || !verifyPassword(currentPassword, admin.passwordHash)) {
-      return res.status(401).json({ message: "Current password is incorrect." });
+      return res.status(401).json({ message: 'Current password is incorrect.' });
     }
     admin.passwordHash = hashPassword(newPassword);
     await admin.save();
-    res.json({ message: "Password changed successfully." });
+    res.json({ message: 'Password changed successfully.' });
   } catch (error) {
     next(error);
   }
@@ -87,10 +94,10 @@ exports.backupDatabase = async (req, res, next) => {
 
     res.json({
       generatedAt: new Date().toISOString(),
-      app: "Kanpur Laboratory",
+      app: 'Kanpur Laboratory',
       version: 1,
       exportedBy: req.admin.username,
-      database: "kanpur_lab",
+      database: 'kanpur_lab',
       counts: {
         samples: samples.length,
         suppliers: suppliers.length,
@@ -117,7 +124,7 @@ exports.restoreDatabase = async (req, res, next) => {
 
     if (!samples || !suppliers || !counters) {
       return res.status(400).json({
-        message: "Invalid backup file. Expected samples, suppliers, and counters arrays.",
+        message: 'Invalid backup file. Expected samples, suppliers, and counters arrays.',
       });
     }
 
@@ -128,7 +135,7 @@ exports.restoreDatabase = async (req, res, next) => {
     ]);
 
     res.json({
-      message: "Database restored successfully.",
+      message: 'Database restored successfully.',
       restoredAt: new Date().toISOString(),
       restoredBy: req.admin.username,
       counts: {

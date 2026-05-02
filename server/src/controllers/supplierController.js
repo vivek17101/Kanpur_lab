@@ -1,11 +1,9 @@
-const Supplier = require("../models/Supplier");
+const Supplier = require('../models/Supplier');
 
 exports.getSuppliers = async (req, res, next) => {
   try {
-    const { search = "" } = req.query;
-    const filter = search
-      ? { name: { $regex: search, $options: "i" } }
-      : {};
+    const { search = '' } = req.query;
+    const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
     const suppliers = await Supplier.find(filter).sort({ name: 1 });
 
     res.json(suppliers);
@@ -43,7 +41,7 @@ exports.updateSupplier = async (req, res, next) => {
     );
 
     if (!supplier) {
-      return res.status(404).json({ message: "Supplier not found" });
+      return res.status(404).json({ message: 'Supplier not found' });
     }
 
     res.json(supplier);
@@ -57,7 +55,7 @@ exports.deleteSupplier = async (req, res, next) => {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
 
     if (!supplier) {
-      return res.status(404).json({ message: "Supplier not found" });
+      return res.status(404).json({ message: 'Supplier not found' });
     }
 
     res.status(204).send();

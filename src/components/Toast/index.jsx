@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import styles from "./Toast.module.css";
+import { useEffect, useState } from 'react';
+import styles from './Toast.module.css';
 
-export default function Toast({ message, type = "info", onDismiss }) {
+export default function Toast({ message, type = 'info', onDismiss }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -19,7 +19,15 @@ export default function Toast({ message, type = "info", onDismiss }) {
   return (
     <div className={`${styles.toast} ${styles[type]} ${visible ? styles.in : styles.out}`}>
       <span>{message}</span>
-      <button className={styles.close} onClick={() => { setVisible(false); setTimeout(() => onDismiss?.(), 300); }}>✕</button>
+      <button
+        className={styles.close}
+        onClick={() => {
+          setVisible(false);
+          setTimeout(() => onDismiss?.(), 300);
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
 }
