@@ -7,7 +7,7 @@
   padding: 18px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: 0 12px 28px rgba(10, 19, 43, 0.06);
 }
 
@@ -43,7 +43,7 @@
   color: #0f172a;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .actions {
@@ -57,7 +57,7 @@
 .tableWrapper {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .table {
@@ -78,6 +78,9 @@
   color: #475569;
   font-weight: 700;
   background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .toolbarActions {
@@ -91,7 +94,7 @@
   color: #0f172a;
   background: #eef6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .error {
@@ -99,7 +102,27 @@
   color: #991b1b;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 10px;
+  border-radius: 8px;
+}
+
+.inlineWarning {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  margin-top: 14px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+
+.inlineWarning strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.inlineWarning span {
+  font-size: 13px;
 }
 
 @media (max-width: 720px) {

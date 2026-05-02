@@ -12,7 +12,7 @@
   padding: 16px;
   background: linear-gradient(135deg, #f8fbff 0%, #eef4f1 100%);
   border: 1px solid #dfe8e4;
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
 .toolbarActions {
@@ -25,7 +25,7 @@
   padding: 18px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: 0 12px 28px rgba(10, 19, 43, 0.06);
 }
 
@@ -41,7 +41,7 @@
   padding: 16px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: 0 10px 24px rgba(10, 19, 43, 0.05);
   border-left: 4px solid #e2e8f0;
 }
@@ -101,7 +101,7 @@
   margin-bottom: 18px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 8px;
 }
 
 .field {
@@ -123,7 +123,7 @@
   color: #0f172a;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .filterButton {
@@ -134,7 +134,7 @@
 .tableWrapper {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .table {
@@ -155,6 +155,9 @@
   color: #475569;
   font-weight: 700;
   background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table tr:last-child td {
@@ -210,7 +213,7 @@
   color: #0f172a;
   background: #eef6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .error {
@@ -218,7 +221,92 @@
   color: #991b1b;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 10px;
+  border-radius: 8px;
+}
+
+.lifecycle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lifecycleStep {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.lifecycleStep span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  background: #e2e8f0;
+  border-radius: 50%;
+}
+
+.lifecycleStep strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lifecycleStepActive {
+  color: #0a132b;
+  background: #eef6ff;
+  border-color: #bfdbfe;
+}
+
+.lifecycleStepActive span {
+  color: #ffffff;
+  background: #0a132b;
+}
+
+.activityPanel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  margin-top: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.activityPanel ol {
+  display: grid;
+  gap: 8px;
+}
+
+.activityPanel li {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.activityPanel strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.activityPanel span,
+.activityPanel time {
+  color: #64748b;
+  font-size: 13px;
 }
 
 .reportActions {
@@ -239,6 +327,11 @@
   }
 
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lifecycle,
+  .activityPanel li {
     grid-template-columns: 1fr;
   }
 

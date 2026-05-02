@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './App.module.css';
 import Header from './components/Header';
 import Login from './components/Login';
@@ -10,10 +10,132 @@ import ConfirmModal from './components/ConfirmModal';
 import Button, { ButtonLabel } from './components/Button';
 import { useAuth } from './contexts/AuthContext';
 import { getDatabaseBackup, restoreDatabase } from './services/authApi';
+import { getSamples, getSampleStats } from './services/sampleApi';
+import { getSuppliers } from './services/supplierApi';
+
+function Dashboard({ onNavigate }) {
+  const [stats, setStats] = useState({ total: 0, Pending: 0, Tested: 0, Reported: 0 });
+  const [recentSamples, setRecentSamples] = useState([]);
+  const [supplierCount, setSupplierCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [summary, latest, suppliers] = await Promise.all([
+        getSampleStats(),
+        getSamples({ page: 1, limit: 6 }),
+        getSuppliers(),
+      ]);
+      setStats(summary);
+      setRecentSamples(latest.samples || []);
+      setSupplierCount(suppliers.length);
+    } catch {
+      setRecentSamples([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const attentionCount = Number(stats.Pending || 0) + Number(stats.Tested || 0);
+
+  return (
+    <section className={styles.dashboard}>
+      <div className={styles.dashboardHero}>
+        <div>
+          <span className={styles.eyebrow}>Lab operations</span>
+          <h2>Today’s workbench</h2>
+          <p>Track incoming samples, pending results, and reports ready to send.</p>
+        </div>
+        <div className={styles.heroActions}>
+          <Button onClick={() => onNavigate('register')}>
+            <ButtonLabel label="Open Register" />
+          </Button>
+          <Button variant="secondary" onClick={() => onNavigate('suppliers')}>
+            <ButtonLabel label="Supplier Master" />
+          </Button>
+        </div>
+      </div>
+
+      <div className={styles.kpiGrid}>
+        <article>
+          <span>Total samples</span>
+          <strong>{stats.total}</strong>
+        </article>
+        <article>
+          <span>Need attention</span>
+          <strong>{attentionCount}</strong>
+        </article>
+        <article>
+          <span>Reports sent</span>
+          <strong>{stats.Reported}</strong>
+        </article>
+        <article>
+          <span>Suppliers</span>
+          <strong>{supplierCount}</strong>
+        </article>
+      </div>
+
+      <div className={styles.dashboardGrid}>
+        <section className={styles.workPanel}>
+          <div className={styles.panelTitle}>
+            <h3>Workflow</h3>
+            <span>{isLoading ? 'Refreshing...' : `${stats.total || 0} records`}</span>
+          </div>
+          <div className={styles.flowList}>
+            <button onClick={() => onNavigate('register')}>
+              <span className={styles.flowDotPending} />
+              <strong>{stats.Pending}</strong>
+              <span>Pending test entry</span>
+            </button>
+            <button onClick={() => onNavigate('register')}>
+              <span className={styles.flowDotTested} />
+              <strong>{stats.Tested}</strong>
+              <span>Reports ready</span>
+            </button>
+            <button onClick={() => onNavigate('register')}>
+              <span className={styles.flowDotReported} />
+              <strong>{stats.Reported}</strong>
+              <span>Reported samples</span>
+            </button>
+          </div>
+        </section>
+
+        <section className={styles.workPanel}>
+          <div className={styles.panelTitle}>
+            <h3>Recent samples</h3>
+            <button onClick={() => onNavigate('register')}>View all</button>
+          </div>
+          <div className={styles.recentList}>
+            {recentSamples.length === 0 ? (
+              <p>No recent samples found.</p>
+            ) : (
+              recentSamples.map((sample) => (
+                <div key={sample._id} className={styles.recentItem}>
+                  <div>
+                    <strong>{sample.reportNumber || sample.sampleNo || 'New sample'}</strong>
+                    <span>{sample.supplierName} / {sample.sampleReference}</span>
+                  </div>
+                  <span className={`${styles.statusPill} ${styles[`status${sample.status}`]}`}>
+                    {sample.status}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
 
 function App() {
   const { admin, isCheckingSession, logout } = useAuth();
-  const [activePage, setActivePage] = useState('register');
+  const [activePage, setActivePage] = useState('dashboard');
   const [suppliersVersion, setSuppliersVersion] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -27,7 +149,7 @@ function App() {
 
   const handleLogout = () => {
     logout();
-    setActivePage('register');
+    setActivePage('dashboard');
   };
 
   const handleBackupDatabase = async () => {
@@ -73,17 +195,20 @@ function App() {
     }
 
     pendingBackupRef.current = backup;
+    const counts = backup?.counts || backup?.data || {};
+    const sampleCount = counts.samples?.length ?? counts.samples ?? 0;
+    const supplierCount = counts.suppliers?.length ?? counts.suppliers ?? 0;
     setConfirm({
       message: 'Restore this backup?',
       detail:
-        'This will replace all current samples, suppliers, and report counters. This cannot be undone.',
+        `This will replace current data with ${sampleCount} samples and ${supplierCount} suppliers. Create a fresh backup first if you need a rollback point.`,
       onConfirm: async () => {
         dismissConfirm();
         setIsRestoring(true);
         try {
           const result = await restoreDatabase(pendingBackupRef.current);
           showToast(
-            `Restored � ${result.counts.samples} samples, ${result.counts.suppliers} suppliers.`,
+            `Restored ${result.counts.samples} samples and ${result.counts.suppliers} suppliers.`,
             'success'
           );
           setTimeout(() => window.location.reload(), 1800);
@@ -130,6 +255,12 @@ function App() {
             <div className={styles.topbar}>
               <nav className={styles.nav}>
                 <button
+                  className={activePage === 'dashboard' ? styles.active : ''}
+                  onClick={() => setActivePage('dashboard')}
+                >
+                  Dashboard
+                </button>
+                <button
                   className={activePage === 'register' ? styles.active : ''}
                   onClick={() => setActivePage('register')}
                 >
@@ -172,6 +303,7 @@ function App() {
               </div>
             </div>
 
+            {activePage === 'dashboard' && <Dashboard onNavigate={setActivePage} />}
             {activePage === 'register' && <SampleRegister suppliersVersion={suppliersVersion} />}
             {activePage === 'suppliers' && (
               <SupplierManager onSuppliersChanged={() => setSuppliersVersion((v) => v + 1)} />

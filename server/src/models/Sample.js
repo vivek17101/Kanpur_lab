@@ -25,6 +25,26 @@ const testSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const activitySchema = new mongoose.Schema(
+  {
+    action: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    detail: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    at: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 const sampleSchema = new mongoose.Schema(
   {
     reportNumber: {
@@ -103,6 +123,10 @@ const sampleSchema = new mongoose.Schema(
       type: String,
       enum: ['Pending', 'Tested', 'Reported'],
       default: 'Pending',
+    },
+    activityLog: {
+      type: [activitySchema],
+      default: [],
     },
   },
   {

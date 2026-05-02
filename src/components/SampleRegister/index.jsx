@@ -139,6 +139,12 @@ function sampleToFields(s) {
   };
 }
 
+function getNextActionLabel(status) {
+  if (status === 'Pending') return 'Enter Results';
+  if (status === 'Tested') return 'Generate Report';
+  return 'View Report';
+}
+
 export default function SampleRegister({ suppliersVersion = 0 }) {
   const [form, setForm] = useState(getEmptyForm);
   const [samples, setSamples] = useState([]);
@@ -225,6 +231,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
   }, [selectedSample, suppliers]);
 
   const selectedSupplierWhatsApp = normalizeWhatsAppNumber(selectedSupplier?.whatsappNumber);
+  const selectedActivity = selectedSample?.activityLog || [];
 
   const clearFilters = () => {
     setSearch('');
@@ -362,6 +369,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
     try {
       const updated = await updateSample(selectedSample._id, {
         tests,
+        status: selectedSample.status === 'Reported' ? 'Tested' : selectedSample.status,
         dateOfTest: sampleFields.dateOfTest
           ? new Date(sampleFields.dateOfTest).toISOString()
           : new Date().toISOString(),
@@ -511,6 +519,53 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
         <span>Condition of Sample</span>
         <input name="conditionOfSample" value={fields.conditionOfSample} onChange={onChange} />
       </label>
+    </div>
+  );
+
+  const Lifecycle = ({ status }) => {
+    const steps = [
+      { key: 'Pending', label: 'Received' },
+      { key: 'Tested', label: 'Testing done' },
+      { key: 'Reported', label: 'Report sent' },
+    ];
+    const activeIndex = Math.max(
+      0,
+      steps.findIndex((step) => step.key === status)
+    );
+
+    return (
+      <div className={styles.lifecycle}>
+        {steps.map((step, index) => (
+          <div
+            key={step.key}
+            className={`${styles.lifecycleStep} ${
+              index <= activeIndex ? styles.lifecycleStepActive : ''
+            }`}
+          >
+            <span>{index + 1}</span>
+            <strong>{step.label}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const ActivityLog = () => (
+    <div className={styles.activityPanel}>
+      <h4 className="text--default fw-700">Activity</h4>
+      {selectedActivity.length === 0 ? (
+        <p className={styles.muted}>No activity recorded yet.</p>
+      ) : (
+        <ol>
+          {[...selectedActivity].reverse().slice(0, 6).map((item, index) => (
+            <li key={`${item.action}-${item.at}-${index}`}>
+              <strong>{item.action}</strong>
+              <span>{item.detail}</span>
+              <time>{formatDate(item.at)}</time>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 
@@ -693,8 +748,23 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
                       </td>
                       <td>
                         <div className={styles.toolbarActions}>
-                          <Button size="md" onClick={() => handleSelectSample(sample._id, 'tests')}>
-                            <ButtonLabel label="View / Add Test Results" />
+                          <Button
+                            size="md"
+                            onClick={() =>
+                              handleSelectSample(
+                                sample._id,
+                                sample.status === 'Pending' ? 'tests' : 'report'
+                              )
+                            }
+                          >
+                            <ButtonLabel label={getNextActionLabel(sample.status)} />
+                          </Button>
+                          <Button
+                            size="md"
+                            variant="secondary"
+                            onClick={() => handleSelectSample(sample._id, 'tests')}
+                          >
+                            <ButtonLabel label="Edit" />
                           </Button>
                           <Button
                             size="md"
@@ -760,6 +830,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
             </Button>
           </div>
           <div className={styles.detailEditor}>
+            <Lifecycle status={selectedSample.status} />
             <h4 className="text--default fw-700">Sample / Report Details</h4>
             <FieldGroup
               fields={sampleFields}
@@ -825,6 +896,7 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               <ButtonLabel label="Generate Report" />
             </Button>
           </div>
+          <ActivityLog />
         </section>
       )}
 
@@ -850,6 +922,9 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
             </Button>
           </div>
           <div className={styles.reportActions}>
+            <Button variant="secondary" onClick={() => setView('tests')}>
+              <ButtonLabel label="Edit / Correct" />
+            </Button>
             <ReportDownloadLink reportData={reportData}>
               {({ loading }) => (
                 <span className={styles.downloadLink}>
@@ -867,7 +942,9 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
               />
             </Button>
           </div>
+          <Lifecycle status={selectedSample.status} />
           <Report sample={selectedSample} />
+          <ActivityLog />
         </section>
       )}
     </div>

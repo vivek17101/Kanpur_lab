@@ -22,6 +22,10 @@ export default function SupplierManager({ onSuppliersChanged }) {
   const [confirm, setConfirm] = useState({ message: '', onConfirm: null });
 
   const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
+  const normalizedName = form.name.trim().toLowerCase();
+  const duplicateSupplier = suppliers.find(
+    (supplier) => supplier.name.trim().toLowerCase() === normalizedName && supplier._id !== editingId
+  );
 
   const loadSuppliers = useCallback(async () => {
     setIsLoading(true);
@@ -51,6 +55,11 @@ export default function SupplierManager({ onSuppliersChanged }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (duplicateSupplier) {
+      showToast('This supplier already exists. Use Edit to update the saved supplier.', 'warning');
+      return;
+    }
+
     try {
       if (editingId) {
         await updateSupplier(editingId, form);
@@ -138,13 +147,19 @@ export default function SupplierManager({ onSuppliersChanged }) {
               <input name="address" value={form.address} onChange={handleChange} />
             </label>
           </div>
+          {duplicateSupplier && (
+            <div className={styles.inlineWarning}>
+              <strong>Supplier already exists.</strong>
+              <span>Open the saved row below and use Edit to change contact details.</span>
+            </div>
+          )}
           <div className={styles.actions}>
             {editingId && (
               <Button type="button" variant="secondary" onClick={resetForm}>
                 <ButtonLabel label="Cancel Edit" />
               </Button>
             )}
-            <Button type="submit">
+            <Button type="submit" disabled={Boolean(duplicateSupplier)}>
               <ButtonLabel label={editingId ? 'Update Supplier' : 'Add Supplier'} />
             </Button>
           </div>

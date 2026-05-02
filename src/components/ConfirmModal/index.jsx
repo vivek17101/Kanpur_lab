@@ -2,6 +2,7 @@ import styles from './ConfirmModal.module.css';
 
 export default function ConfirmModal({
   message,
+  detail = '',
   onConfirm,
   onCancel,
   confirmLabel = 'Delete',
@@ -13,6 +14,7 @@ export default function ConfirmModal({
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <p className={styles.message}>{message}</p>
+        {detail && <p className={styles.detail}>{detail}</p>}
         <div className={styles.actions}>
           <button className={styles.cancel} onClick={onCancel}>
             {cancelLabel}
