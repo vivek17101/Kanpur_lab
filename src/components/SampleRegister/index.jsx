@@ -145,7 +145,11 @@ function getNextActionLabel(status) {
   return 'View Report';
 }
 
-export default function SampleRegister({ suppliersVersion = 0 }) {
+export default function SampleRegister({
+  suppliersVersion = 0,
+  initialView = '',
+  onInitialViewHandled,
+}) {
   const [form, setForm] = useState(getEmptyForm);
   const [samples, setSamples] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, totalPages: 1 });
@@ -191,6 +195,12 @@ export default function SampleRegister({ suppliersVersion = 0 }) {
   useEffect(() => {
     loadSamples();
   }, [loadSamples]);
+
+  useEffect(() => {
+    if (!initialView) return;
+    setView(initialView);
+    onInitialViewHandled?.();
+  }, [initialView, onInitialViewHandled]);
 
   useEffect(() => {
     async function loadSuppliers() {

@@ -63,3 +63,34 @@
 .confirm.danger  { background: #ef4444; color: #fff; }
 .confirm.primary { background: #0a132b; color: #fff; }
 .confirm:hover   { opacity: 0.88; }
+
+:global(.dark) .modal {
+  background: #111827;
+  border: 1px solid #334155;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+:global(.dark) .message {
+  color: #f8fafc;
+}
+
+:global(.dark) .detail {
+  color: #94a3b8;
+}
+
+:global(.dark) .cancel {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+:global(.dark) .cancel:hover {
+  background: #334155;
+}
+
+:global(.dark) .confirm.danger {
+  background: #dc2626;
+}
+
+:global(.dark) .confirm.primary {
+  background: #0ea5e9;
+}

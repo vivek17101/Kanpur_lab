@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html,
 body,
 div,
@@ -104,7 +108,8 @@ section {
 
 body {
 	line-height: 1;
-	background: #f6f8fb;
+	background: var(--body-bg);
+	color: var(--text-color);
 }
 
 ol,
@@ -143,6 +148,18 @@ button {
 	--tertiary-color: #C4C4C4;
 	--quaternary-color: #EEF0F5;
 	--danger-color: #e93b34;
+	--body-bg: #f6f8fb;
+	--surface: #ffffff;
+	--surface-muted: #f8fafc;
+	--surface-strong: #eef0f5;
+	--text-color: #0f172a;
+	--text-muted: #64748b;
+	--border-color: #e2e8f0;
+	--border-muted: #cbd5e1;
+	--input-bg: #f8fafc;
+	--input-border: #cbd5e1;
+	--input-text: #0f172a;
+	--shadow: 0 8px 22px rgba(10, 19, 43, 0.08);
 	box-sizing: border-box;
 	--p: 0;
 	--pt: 0;
@@ -158,6 +175,21 @@ button {
 	--ml: 0;
 	--mx: 0;
 	--my: 0;
+}
+
+.dark {
+	--body-bg: #0b1220;
+	--surface: #111827;
+	--surface-muted: #161f2f;
+	--surface-strong: #1e293b;
+	--text-color: #e2e8f0;
+	--text-muted: #94a3b8;
+	--border-color: #334155;
+	--border-muted: #475569;
+	--input-bg: #111827;
+	--input-border: #334155;
+	--input-text: #f8fafc;
+	--shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
 *,
@@ -301,7 +333,15 @@ textarea {
   font-family: inherit;
   font-size: 14px;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s, color 0.15s;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+
+select option {
+  background: var(--input-bg);
+  color: var(--input-text);
 }
 
 input:focus,
@@ -317,7 +357,8 @@ textarea:focus {
 	bottom: 0;
 	width: 100%;
 	padding: 16px 0;
-	background-color: white;
+	background-color: var(--surface);
+	color: var(--text-color);
 }
 
 .main {

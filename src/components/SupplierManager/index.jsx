@@ -24,7 +24,10 @@ export default function SupplierManager({ onSuppliersChanged }) {
   const showToast = useCallback((message, type = 'info') => setToast({ message, type }), []);
   const normalizedName = form.name.trim().toLowerCase();
   const duplicateSupplier = suppliers.find(
-    (supplier) => supplier.name.trim().toLowerCase() === normalizedName && supplier._id !== editingId
+    (supplier) =>
+      normalizedName &&
+      supplier.name.trim().toLowerCase() === normalizedName &&
+      supplier._id !== editingId
   );
 
   const loadSuppliers = useCallback(async () => {
@@ -160,7 +163,7 @@ export default function SupplierManager({ onSuppliersChanged }) {
               </Button>
             )}
             <Button type="submit" disabled={Boolean(duplicateSupplier)}>
-              <ButtonLabel label={editingId ? 'Update Supplier' : 'Add Supplier'} />
+              <ButtonLabel label={editingId ? 'Update Supplier Details' : 'Save Supplier Details'} />
             </Button>
           </div>
         </form>

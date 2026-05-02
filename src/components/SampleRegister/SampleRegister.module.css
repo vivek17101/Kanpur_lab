@@ -76,6 +76,10 @@
   margin-bottom: 16px;
 }
 
+:global(.dark) .panelHeader h3 {
+  color: #f8fafc;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -173,6 +177,125 @@
   background: #f1f5f9;
 }
 
+:global(.dark) .detailEditor {
+  background: #111827;
+  border-color: #334155;
+}
+
+:global(.dark) .field label {
+  color: #cbd5e1;
+}
+
+:global(.dark) .field input,
+:global(.dark) .field select {
+  background: #111827;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+:global(.dark) .tableWrapper {
+  border-color: #334155;
+}
+
+:global(.dark) .table th {
+  background: #111827;
+  color: #cbd5e1;
+  border-bottom-color: #334155;
+}
+
+:global(.dark) .table td {
+  color: #e2e8f0;
+  border-bottom-color: #334155;
+}
+
+:global(.dark) .table tbody tr:hover {
+  background: #161f2f;
+}
+
+:global(.dark) .table tbody tr.rowSelected {
+  background: #1f2937;
+  outline: 2px solid #475569;
+  outline-offset: -2px;
+}
+
+:global(.dark) .message {
+  color: #cbd5e1;
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global(.dark) .error {
+  color: #fee2e2;
+  background: #4b1d1d;
+  border-color: #7f1d1d;
+}
+
+:global(.dark) .toolbar {
+  background: linear-gradient(135deg, #111827 0%, #161f2f 100%);
+  border-color: #334155;
+}
+
+:global(.dark) .panel {
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark) .statCard {
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+:global(.dark) .statCard span {
+  color: #94a3b8;
+}
+
+:global(.dark) .statCard strong {
+  color: #f8fafc;
+}
+
+:global(.dark) .lifecycleStep {
+  background: #111827;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+:global(.dark) .lifecycleStep span {
+  background: #334155;
+  color: #94a3b8;
+}
+
+:global(.dark) .lifecycleStepActive {
+  background: #0f2442;
+  border-color: #334155;
+  color: #93c5fd;
+}
+
+:global(.dark) .lifecycleStepActive span {
+  background: #0a132b;
+  color: #93c5fd;
+}
+
+:global(.dark) .activityPanel {
+  background: #111827;
+  border-color: #334155;
+}
+
+:global(.dark) .activityPanel li {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global(.dark) .activityPanel strong {
+  color: #f8fafc;
+}
+
+:global(.dark) .activityPanel span,
+:global(.dark) .activityPanel time {
+  color: #94a3b8;
+}
+
 .table tbody tr.rowSelected {
   background: #eef4ff;
   outline: 2px solid #bfdbfe;
@@ -203,9 +326,28 @@
   background: #dcfce7;
 }
 
+:global(.dark) .Pending {
+  color: #f8fafc;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+:global(.dark) .Tested {
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.18);
+}
+
+:global(.dark) .Reported {
+  color: #d1fae5;
+  background: rgba(16, 185, 129, 0.18);
+}
+
 .muted {
   color: #64748b;
   font-size: 14px;
+}
+
+:global(.dark) .muted {
+  color: #94a3b8;
 }
 
 .message {

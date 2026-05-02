@@ -130,3 +130,60 @@
     grid-template-columns: 1fr;
   }
 }
+
+:global(.dark) .panel {
+  color: #e2e8f0;
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+:global(.dark) .panelHeader h2,
+:global(.dark) .panelHeader h3,
+:global(.dark) .panelHeader p,
+:global(.dark) .field span,
+:global(.dark) .table td {
+  color: #cbd5e1;
+}
+
+:global(.dark) .field input,
+:global(.dark) .field select {
+  color: #f8fafc;
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:global(.dark) .tableWrapper {
+  border-color: #1e293b;
+}
+
+:global(.dark) .table th {
+  color: #cbd5e1;
+  background: #1e293b;
+}
+
+:global(.dark) .table th,
+:global(.dark) .table td {
+  border-bottom-color: #1e293b;
+}
+
+:global(.dark) .message {
+  color: #cbd5e1;
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global(.dark) .error {
+  color: #fee2e2;
+  background: #3f1d1d;
+  border-color: #7f1d1d;
+}
+
+:global(.dark) .inlineWarning {
+  color: #f8fafc;
+  background: #7c2d12;
+  border-color: #9a3412;
+}
+
+:global(.dark) .inlineWarning strong {
+  color: #fbbf24;
+}

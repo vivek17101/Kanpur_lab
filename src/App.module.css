@@ -239,6 +239,21 @@
   background: #dcfce7;
 }
 
+:global(.dark) .statusPending {
+  color: #f8fafc;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+:global(.dark) .statusTested {
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.18);
+}
+
+:global(.dark) .statusReported {
+  color: #d1fae5;
+  background: rgba(16, 185, 129, 0.18);
+}
+
 @media (max-width: 900px) {
   .dashboardHero {
     align-items: stretch;
