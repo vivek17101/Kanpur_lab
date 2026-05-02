@@ -1,6 +1,5 @@
-import React from "react";
-import logo from "../../assets/kanpur_lab_logo.png";
-import styles from "./Header.module.css";
+import logo from '../../assets/kanpur_lab_logo.png';
+import styles from './Header.module.css';
 export default function Header({ title }) {
   return (
     <header className={styles.header} id="header">

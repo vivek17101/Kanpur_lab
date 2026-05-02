@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { loginAdmin } from "../../services/authApi";
-import { setStoredToken } from "../../services/apiClient";
-import Button, { ButtonLabel } from "../Button";
-import styles from "./Login.module.css";
+import { useState } from 'react';
+import { loginAdmin } from '../../services/authApi';
+import { setStoredToken } from '../../services/apiClient';
+import Button, { ButtonLabel } from '../Button';
+import { useAuth } from '../../contexts/AuthContext';
+import styles from './Login.module.css';
 
-export default function Login({ onLogin }) {
+export default function Login() {
   const [credentials, setCredentials] = useState({
-    username: "admin",
-    password: "",
+    username: 'admin',
+    password: '',
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
@@ -17,15 +18,17 @@ export default function Login({ onLogin }) {
     setCredentials((current) => ({ ...current, [name]: value }));
   };
 
+  const { setAdmin } = useAuth();
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError("");
+    setError('');
     setIsSubmitting(true);
 
     try {
       const data = await loginAdmin(credentials);
       setStoredToken(data.token);
-      onLogin(data.admin);
+      setAdmin(data.admin);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,7 +65,7 @@ export default function Login({ onLogin }) {
             />
           </label>
           <Button type="submit" disabled={isSubmitting}>
-            <ButtonLabel label={isSubmitting ? "Signing in..." : "Login"} />
+            <ButtonLabel label={isSubmitting ? 'Signing in...' : 'Login'} />
           </Button>
         </form>
       </div>

@@ -1,31 +1,31 @@
-import { request } from "./apiClient";
+import { request } from './apiClient';
 
 export function loginAdmin(credentials) {
-  return request("/auth/login", {
-    method: "POST",
+  return request('/auth/login', {
+    method: 'POST',
     body: JSON.stringify(credentials),
-    token: "",
+    token: '',
   });
 }
 
 export function getCurrentAdmin() {
-  return request("/auth/me");
+  return request('/auth/me');
 }
 
 export function changePassword(passwords) {
-  return request("/auth/change-password", {
-    method: "POST",
+  return request('/auth/change-password', {
+    method: 'POST',
     body: JSON.stringify(passwords),
   });
 }
 
 export function getDatabaseBackup() {
-  return request("/auth/backup");
+  return request('/auth/backup');
 }
 
 export function restoreDatabase(backup) {
-  return request("/auth/restore", {
-    method: "POST",
+  return request('/auth/restore', {
+    method: 'POST',
     body: JSON.stringify(backup),
   });
 }

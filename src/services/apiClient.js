@@ -1,22 +1,22 @@
-export const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export function getStoredToken() {
-  return localStorage.getItem("kanpurLabAdminToken");
+  return localStorage.getItem('kanpurLabAdminToken');
 }
 
 export function setStoredToken(token) {
-  localStorage.setItem("kanpurLabAdminToken", token);
+  localStorage.setItem('kanpurLabAdminToken', token);
 }
 
 export function clearStoredToken() {
-  localStorage.removeItem("kanpurLabAdminToken");
+  localStorage.removeItem('kanpurLabAdminToken');
 }
 
 export async function request(path, options = {}) {
   let response;
   const token = options.token || getStoredToken();
   const headers = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     ...options.headers,
   };
 
@@ -37,7 +37,7 @@ export async function request(path, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || "API request failed");
+    throw new Error(error.message || 'API request failed');
   }
 
   if (response.status === 204) {

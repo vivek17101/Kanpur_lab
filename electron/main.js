@@ -252,8 +252,8 @@ async function startServer(envVars) {
   })
 
   let errOut = ''
-  serverProcess.stdout.on('data', d => console.log('[svr]', d.toString().trim()))
-  serverProcess.stderr.on('data', d => { errOut += d; console.error('[svr]', d.toString().trim()) })
+  serverProcess.stdout.on('data', d => process.env.NODE_ENV === 'development' ? console.log('[svr]', d.toString().trim()) : null)
+  serverProcess.stderr.on('data', d => { errOut += d; process.env.NODE_ENV === 'development' ? console.error('[svr]', d.toString().trim()) : null })
   serverProcess.on('exit', code => console.log('[svr] exit', code))
 
   setStatus('Waiting for server to be ready...', 75)

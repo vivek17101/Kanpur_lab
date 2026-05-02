@@ -2,6 +2,8 @@
   "name": "lab-report",
   "version": "0.1.0",
   "private": true,
+  "description": "Kanpur Laboratory desktop application",
+  "author": "Kanpur Laboratory Team",
   "homepage": ".",
   "main": "electron/main.js",
   "dependencies": {
@@ -24,9 +26,35 @@
     "server:start": "npm start --prefix server",
     "server:install": "npm install --prefix server",
     "build": "react-scripts build",
-    "electron:build": "npm run build && electron-builder",
+    "electron:build": "npm run build && electron-builder --win --x64 --publish never",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint src server/src --ext .js,.jsx",
+    "lint:fix": "eslint src server/src --ext .js,.jsx --fix",
+    "format": "prettier --write src/**/*.{js,jsx} server/src/**/*.js"
+  },
+  "build": {
+    "appId": "com.kanpur.kanpur_lab",
+    "productName": "Kanpur Laboratory",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": false,
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "server/",
+        "to": "server",
+        "filter": ["**/*", "!node_modules/**"]
+      }
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    }
   },
   "eslintConfig": {
     "extends": [
@@ -47,47 +75,11 @@
     ]
   },
   "devDependencies": {
-    "electron": "^41.2.1",
+    "electron": "^41.4.0",
     "electron-builder": "^26.8.1",
-    "gh-pages": "^5.0.0"
-  },
-  "build": {
-    "appId": "com.kanpurlab.app",
-    "productName": "Kanpur Lab",
-    "asar": true,
-    "extraMetadata": {
-      "main": "electron/main.js"
-    },
-    "files": [
-      "build/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "server/src",
-        "to": "server/src"
-      },
-      {
-        "from": "server/package.json",
-        "to": "server/package.json"
-      },
-      {
-        "from": "server/.env",
-        "to": "server/.env"
-      }
-    ],
-    "directories": {
-      "buildResources": "public",
-      "output": "dist"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "public/KanpurLab_AppLogo.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.2.5"
   }
 }

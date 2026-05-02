@@ -1,16 +1,14 @@
-const Counter = require("../models/Counter");
-const Sample = require("../models/Sample");
+const Counter = require('../models/Counter');
+const Sample = require('../models/Sample');
 
-const REPORT_PREFIX = "KL";
+const REPORT_PREFIX = 'KL';
 
-function getStatusFromTests(tests = [], fallback = "Pending") {
-  if (fallback === "Reported") {
-    return "Reported";
+function getStatusFromTests(tests = [], fallback = 'Pending') {
+  if (fallback === 'Reported') {
+    return 'Reported';
   }
 
-  return tests.some((test) => String(test.value || "").trim().length > 0)
-    ? "Tested"
-    : "Pending";
+  return tests.some((test) => String(test.value || '').trim().length > 0) ? 'Tested' : 'Pending';
 }
 
 function getDateRangeFilter(startDate, endDate) {
@@ -30,7 +28,7 @@ function getDateRangeFilter(startDate, endDate) {
 }
 
 function buildSampleFilter(query) {
-  const { search = "", status = "", startDate = "", endDate = "" } = query;
+  const { search = '', status = '', startDate = '', endDate = '' } = query;
   const filter = {};
   const dateRange = getDateRangeFilter(startDate, endDate);
 
@@ -44,11 +42,11 @@ function buildSampleFilter(query) {
 
   if (search) {
     filter.$or = [
-      { reportNumber: { $regex: search, $options: "i" } },
-      { sampleNo: { $regex: search, $options: "i" } },
-      { supplierName: { $regex: search, $options: "i" } },
-      { sampleReference: { $regex: search, $options: "i" } },
-      { CO: { $regex: search, $options: "i" } },
+      { reportNumber: { $regex: search, $options: 'i' } },
+      { sampleNo: { $regex: search, $options: 'i' } },
+      { supplierName: { $regex: search, $options: 'i' } },
+      { sampleReference: { $regex: search, $options: 'i' } },
+      { CO: { $regex: search, $options: 'i' } },
     ];
   }
 
@@ -56,16 +54,14 @@ function buildSampleFilter(query) {
 }
 
 async function getNextReportNumber(dateReceived) {
-  const year = dateReceived
-    ? new Date(dateReceived).getFullYear()
-    : new Date().getFullYear();
+  const year = dateReceived ? new Date(dateReceived).getFullYear() : new Date().getFullYear();
   const key = `sample-report-${year}`;
   const counter = await Counter.findOneAndUpdate(
     { key },
     { $inc: { sequence: 1 } },
     { new: true, upsert: true }
   );
-  const paddedSequence = String(counter.sequence).padStart(4, "0");
+  const paddedSequence = String(counter.sequence).padStart(4, '0');
 
   return {
     reportNumber: `${REPORT_PREFIX}/${year}/${paddedSequence}`,
@@ -129,13 +125,10 @@ exports.getSamples = async (req, res, next) => {
 
 exports.getSampleStats = async (req, res, next) => {
   try {
-    const filter = buildSampleFilter({ ...req.query, status: "" });
+    const filter = buildSampleFilter({ ...req.query, status: '' });
     const [total, statusCounts] = await Promise.all([
       Sample.countDocuments(filter),
-      Sample.aggregate([
-        { $match: filter },
-        { $group: { _id: "$status", count: { $sum: 1 } } },
-      ]),
+      Sample.aggregate([{ $match: filter }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
     ]);
 
     const stats = {
@@ -160,7 +153,7 @@ exports.getSampleById = async (req, res, next) => {
     const sample = await Sample.findById(req.params.id);
 
     if (!sample) {
-      return res.status(404).json({ message: "Sample not found" });
+      return res.status(404).json({ message: 'Sample not found' });
     }
 
     res.json(sample);
@@ -183,7 +176,7 @@ exports.updateSample = async (req, res, next) => {
     });
 
     if (!sample) {
-      return res.status(404).json({ message: "Sample not found" });
+      return res.status(404).json({ message: 'Sample not found' });
     }
 
     res.json(sample);
@@ -197,7 +190,7 @@ exports.deleteSample = async (req, res, next) => {
     const sample = await Sample.findByIdAndDelete(req.params.id);
 
     if (!sample) {
-      return res.status(404).json({ message: "Sample not found" });
+      return res.status(404).json({ message: 'Sample not found' });
     }
 
     res.status(204).send();

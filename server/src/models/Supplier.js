@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const supplierSchema = new mongoose.Schema(
   {
@@ -10,21 +10,21 @@ const supplierSchema = new mongoose.Schema(
     },
     whatsappNumber: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     contactPerson: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
     address: {
       type: String,
-      default: "",
+      default: '',
       trim: true,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Supplier", supplierSchema);
+module.exports = mongoose.model('Supplier', supplierSchema);
