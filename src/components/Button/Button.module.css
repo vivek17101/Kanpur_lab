@@ -15,6 +15,11 @@
     transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
+.label {
+    color: inherit !important;
+    display: inline-block;
+}
+
 .btn:disabled {
     cursor: not-allowed;
     box-shadow: none;
@@ -24,6 +29,10 @@
     background-color: var(--primary-color);
     color: #ffffff;
     border: 1px solid var(--primary-color);
+}
+
+.btn--primary .label {
+    color: inherit !important;
 }
 
 .btn--primary:hover {
@@ -45,6 +54,10 @@
     background-color: #ffffff;
     color: var(--primary-color);
     border: 1px solid #cbd5e1;
+}
+
+.btn--secondary .label {
+    color: inherit !important;
 }
 .btn--secondary:hover{
     background-color: var(--quaternary-color);
@@ -72,6 +85,10 @@
     color: #f8fafc;
     background-color: #1e293b;
     border-color: #475569;
+}
+
+:global(.dark) .btn--secondary .label {
+    color: inherit !important;
 }
 
 :global(.dark) .btn--secondary:hover {

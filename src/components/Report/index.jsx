@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import labData from '../../data/labTests';
@@ -27,6 +27,42 @@ async function loadImageAsBase64(src) {
     };
     img.onerror = () => resolve(null);
     img.src = src;
+  });
+}
+
+/**
+ * Wait for all <img> elements inside a container to finish loading.
+ * Falls back to a 1s timeout if any image stalls, so we never hang forever.
+ * This replaces the old hardcoded setTimeout(resolve, 600) which was a guess
+ * and would silently produce broken PDFs on slower machines.
+ */
+function waitForImages(container, timeoutMs = 1000) {
+  return new Promise((resolve) => {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) {
+      resolve();
+      return;
+    }
+
+    let settled = 0;
+    const deadline = setTimeout(resolve, timeoutMs);
+
+    function onSettle() {
+      settled += 1;
+      if (settled >= images.length) {
+        clearTimeout(deadline);
+        resolve();
+      }
+    }
+
+    images.forEach((img) => {
+      if (img.complete) {
+        onSettle();
+      } else {
+        img.addEventListener('load', onSettle, { once: true });
+        img.addEventListener('error', onSettle, { once: true });
+      }
+    });
   });
 }
 
@@ -608,7 +644,14 @@ export function ReportTemplate({
   );
 }
 
-// Renders the report off-screen and captures it for PDF creation.
+/**
+ * Renders the report off-screen and captures it for PDF creation.
+ *
+ * Fix #2: Replaced the old hardcoded setTimeout(resolve, 600) with
+ * waitForImages(), which waits for every <img> inside the container to
+ * fire its load/error event before handing off to html2canvas.
+ * A 1-second absolute deadline ensures we never hang indefinitely.
+ */
 async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc) {
   const container = document.createElement('div');
   container.style.cssText =
@@ -630,7 +673,10 @@ async function captureTemplate(reportData, logoSrc, waterMarkSrc, swastikSrc, om
         signSrc={signSrc}
       />
     );
-    setTimeout(resolve, 600);
+    // Wait one animation frame for React to flush, then wait for images.
+    requestAnimationFrame(() => {
+      waitForImages(container).then(resolve);
+    });
   });
 
   const el = container.firstChild;
@@ -714,8 +760,21 @@ export function useReportAssets() {
   return { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc };
 }
 
-// Wraps report downloads with loading state handling.
-export function ReportDownloadLink({ reportData, children }) {
+/**
+ * Fix #1: ReportDownloadLink
+ *
+ * Previously the Download PDF button had onClick={handleMarkReported} on the
+ * inner <Button>, which called mark-reported directly, then relied on accidental
+ * event bubbling to the outer span to trigger the actual PDF download.
+ *
+ * Now the component exposes an explicit onAfterDownload callback. The parent
+ * (SampleRegister) passes handleMarkReported there, so the sequence is always:
+ *   1. Click → generate PDF → save file
+ *   2. onAfterDownload() called → mark sample as reported
+ *
+ * This makes the intent clear and removes the dependency on event bubbling.
+ */
+export function ReportDownloadLink({ reportData, onAfterDownload, children }) {
   const [loading, setLoading] = useState(false);
   const { logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc } = useReportAssets();
 
@@ -724,12 +783,16 @@ export function ReportDownloadLink({ reportData, children }) {
     setLoading(true);
     try {
       await generatePDF(reportData, undefined, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc);
+      // Only mark as reported after the PDF has actually been saved successfully.
+      if (onAfterDownload) {
+        await onAfterDownload();
+      }
     } catch (err) {
       console.error('PDF generation failed:', err);
     } finally {
       setLoading(false);
     }
-  }, [reportData, loading, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc]);
+  }, [reportData, loading, logoSrc, waterMarkSrc, swastikSrc, omSrc, signSrc, onAfterDownload]);
 
   return (
     <span

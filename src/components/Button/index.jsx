@@ -1,6 +1,10 @@
 import style from './Button.module.css';
 
-export const ButtonLabel = ({ label }) => <span>{label}</span>;
+export const ButtonLabel = ({ label }) => (
+  <span className={style.label} style={{ color: 'inherit', display: 'inline-block' }}>
+    {label}
+  </span>
+);
 
 export default function Button({
   variant = 'primary',

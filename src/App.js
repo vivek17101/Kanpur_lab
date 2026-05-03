@@ -16,6 +16,7 @@ function App() {
   const { admin, isCheckingSession, logout } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [initialRegisterView, setInitialRegisterView] = useState('');
+  const [initialRegisterSampleId, setInitialRegisterSampleId] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [suppliersVersion, setSuppliersVersion] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -32,10 +33,11 @@ function App() {
     document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
-  const handleNavigate = (page, registerView = '') => {
+  const handleNavigate = (page, registerView = '', sampleId = '') => {
     setActivePage(page);
-    if (page === 'register' && registerView) {
-      setInitialRegisterView(registerView);
+    if (page === 'register') {
+      setInitialRegisterView(registerView || '');
+      setInitialRegisterSampleId(sampleId || '');
     }
   };
 
@@ -163,7 +165,11 @@ function App() {
               <SampleRegister
                 suppliersVersion={suppliersVersion}
                 initialView={initialRegisterView}
-                onInitialViewHandled={() => setInitialRegisterView('')}
+                initialSampleId={initialRegisterSampleId}
+                onInitialViewHandled={() => {
+                  setInitialRegisterView('');
+                  setInitialRegisterSampleId('');
+                }}
               />
             )}
             {activePage === 'suppliers' && (

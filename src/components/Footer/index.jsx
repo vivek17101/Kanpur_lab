@@ -1,35 +1,15 @@
-import { useContext } from 'react';
-import { LabContext, LabDispatchContext } from '../../context/LabContext';
-import Button, { ButtonLabel } from '../Button';
-import Flexbox from '../FlexBox';
+/**
+ * Footer component.
+ *
+ * Previously imported from a LabContext that no longer exists in this codebase.
+ * The old context-driven "Continue / Add Test" footer was part of an earlier
+ * flow that has since been replaced by SampleRegister.
+ *
+ * This file is kept as a clean stub so nothing breaks if Footer is ever
+ * imported elsewhere. Wire it up with real props when you need it again,
+ * or delete it entirely if it's not used.
+ */
 
 export default function Footer() {
-  const dispatch = useContext(LabDispatchContext);
-  const { currentStep } = useContext(LabContext);
-  const addBtnClickHandler = () => {
-    dispatch({
-      type: 'toggleModal',
-      payload: true,
-    });
-  };
-
-  const continueBtnHandler = () => {
-    dispatch({
-      type: 'updateCurrentStep',
-      payload: currentStep + 1,
-    });
-  };
-
-  return (
-    <footer className="footer" id="footer">
-      <Flexbox align="center" justify="end" className="container">
-        <Button variant="secondary" className="ml-auto" onClick={() => continueBtnHandler()}>
-          <ButtonLabel label="Continue" />
-        </Button>
-        <Button style={{ '--ml': 5 }} onClick={addBtnClickHandler}>
-          <ButtonLabel label="Add Test" />
-        </Button>
-      </Flexbox>
-    </footer>
-  );
+  return null;
 }

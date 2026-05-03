@@ -148,6 +148,7 @@ function getNextActionLabel(status) {
 export default function SampleRegister({
   suppliersVersion = 0,
   initialView = '',
+  initialSampleId = '',
   onInitialViewHandled,
 }) {
   const [form, setForm] = useState(getEmptyForm);
@@ -196,11 +197,34 @@ export default function SampleRegister({
     loadSamples();
   }, [loadSamples]);
 
+  // Fix #13: If a specific sample ID is provided on mount (e.g. from Dashboard),
+  // load that sample directly before switching to the requested view.
   useEffect(() => {
     if (!initialView) return;
-    setView(initialView);
-    onInitialViewHandled?.();
-  }, [initialView, onInitialViewHandled]);
+
+    const handleInitialSample = async () => {
+      if (!initialSampleId) {
+        setView(initialView);
+        onInitialViewHandled?.();
+        return;
+      }
+
+      try {
+        const sample = await getSample(initialSampleId);
+        setSelectedSample(sample);
+        setSampleFields(sampleToFields(sample));
+        setTestRows(normalizeTests(sample.tests));
+        setView(initialView);
+      } catch {
+        // sample may have been deleted; just show the list view
+        setView('list');
+      } finally {
+        onInitialViewHandled?.();
+      }
+    };
+
+    handleInitialSample();
+  }, [initialView, initialSampleId, onInitialViewHandled]);
 
   useEffect(() => {
     async function loadSuppliers() {
@@ -935,11 +959,20 @@ export default function SampleRegister({
             <Button variant="secondary" onClick={() => setView('tests')}>
               <ButtonLabel label="Edit / Correct" />
             </Button>
-            <ReportDownloadLink reportData={reportData}>
+            {/*
+              Fix #1: ReportDownloadLink now receives onAfterDownload.
+              The inner Button no longer has its own onClick — clicking anywhere
+              on the span triggers handleClick inside ReportDownloadLink, which:
+                1. Generates + saves the PDF
+                2. Calls onAfterDownload (handleMarkReported) only on success
+              Previously, the Button's onClick fired handleMarkReported directly
+              and bubbled up to trigger the PDF — correct by accident, fragile by design.
+            */}
+            <ReportDownloadLink reportData={reportData} onAfterDownload={handleMarkReported}>
               {({ loading }) => (
                 <span className={styles.downloadLink}>
-                  <Button disabled={loading} onClick={handleMarkReported}>
-                    <ButtonLabel label={loading ? 'Preparing PDF' : 'Download PDF'} />
+                  <Button disabled={loading}>
+                    <ButtonLabel label={loading ? 'Preparing PDF…' : 'Download PDF'} />
                   </Button>
                 </span>
               )}
