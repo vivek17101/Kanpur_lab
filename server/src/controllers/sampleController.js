@@ -3,6 +3,35 @@ const Sample = require('../models/Sample');
 
 const REPORT_PREFIX = 'KL';
 
+// Allowed top-level sample fields that may be updated via PUT.
+// This whitelist prevents NoSQL injection via $set/$push/$unset in req.body.
+const SAMPLE_UPDATE_FIELDS = [
+  'sampleNo',
+  'supplierName',
+  'CO',
+  'toMs',
+  'sampleReference',
+  'dateOfSeal',
+  'dateReceived',
+  'dateOfTest',
+  'lorryNo',
+  'bags',
+  'weight',
+  'conditionOfSample',
+  'tests',
+  'status',
+];
+
+function pickSampleFields(body) {
+  const picked = {};
+  for (const field of SAMPLE_UPDATE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      picked[field] = body[field];
+    }
+  }
+  return picked;
+}
+
 function getStatusFromTests(tests = [], fallback = 'Pending') {
   if (fallback === 'Reported') {
     return 'Reported';
@@ -85,22 +114,28 @@ async function getNextReportNumber(dateReceived) {
 exports.createSample = async (req, res, next) => {
   try {
     const reportMeta = await getNextReportNumber(req.body.dateReceived);
+    // Pick only known fields to prevent operator injection
+    const fields = pickSampleFields(req.body);
+
     const sample = await Sample.create({
       ...reportMeta,
-      sampleNo: req.body.sampleNo,
-      supplierName: req.body.supplierName,
-      CO: req.body.CO,
-      toMs: req.body.toMs,
-      sampleReference: req.body.sampleReference,
-      dateOfSeal: req.body.dateOfSeal || undefined,
-      dateReceived: req.body.dateReceived,
-      dateOfTest: req.body.dateOfTest || undefined,
-      lorryNo: req.body.lorryNo,
-      bags: req.body.bags,
-      weight: req.body.weight,
-      conditionOfSample: req.body.conditionOfSample,
-      tests: req.body.tests || [],
-      status: getStatusFromTests(req.body.tests || [], req.body.status),
+      sampleNo: fields.sampleNo,
+      supplierName: fields.supplierName,
+      CO: fields.CO,
+      toMs: fields.toMs,
+      sampleReference: fields.sampleReference,
+      dateOfSeal: fields.dateOfSeal || undefined,
+      dateReceived: fields.dateReceived,
+      dateOfTest: fields.dateOfTest || undefined,
+      lorryNo: fields.lorryNo,
+      bags: fields.bags,
+      weight: fields.weight,
+      conditionOfSample: fields.conditionOfSample,
+      tests: Array.isArray(fields.tests) ? fields.tests : [],
+      status: getStatusFromTests(
+        Array.isArray(fields.tests) ? fields.tests : [],
+        fields.status
+      ),
       activityLog: [
         {
           action: 'Sample registered',
@@ -182,20 +217,27 @@ exports.getSampleById = async (req, res, next) => {
 
 exports.updateSample = async (req, res, next) => {
   try {
-    const update = { ...req.body };
+    // Whitelist fields — never spread req.body directly into a Mongoose update.
+    // Doing so would allow callers to inject MongoDB operators ($set, $unset, $push, etc.).
+    const safeUpdate = pickSampleFields(req.body);
 
-    if (Array.isArray(update.tests)) {
-      update.status = getStatusFromTests(update.tests, update.status);
+    if (Array.isArray(safeUpdate.tests)) {
+      safeUpdate.status = getStatusFromTests(safeUpdate.tests, safeUpdate.status);
     }
 
-    update.$push = {
-      activityLog: {
-        ...getActivityForUpdate(update),
-        at: new Date(),
-      },
+    const activityEntry = {
+      ...getActivityForUpdate(safeUpdate),
+      at: new Date(),
     };
 
-    const sample = await Sample.findByIdAndUpdate(req.params.id, update, {
+    // Use $set for the field updates and $push for the activity log separately
+    // so user-supplied data never touches the operator namespace.
+    const mongoUpdate = {
+      $set: safeUpdate,
+      $push: { activityLog: activityEntry },
+    };
+
+    const sample = await Sample.findByIdAndUpdate(req.params.id, mongoUpdate, {
       new: true,
       runValidators: true,
     });

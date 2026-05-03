@@ -1,5 +1,20 @@
 version: '3.8'
 
+# IMPORTANT — before running docker-compose up:
+#
+#   1. Replace the AUTH_SECRET value below with a strong random string (64+ chars).
+#      Generate one with:
+#        node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+#
+#   2. Replace ADMIN_PASSWORD with a strong password.
+#
+#   3. Never commit a real secret to version control.
+#      Consider using a .env file (listed in .gitignore) and referencing it here:
+#        AUTH_SECRET: ${AUTH_SECRET}
+#
+# The server will refuse to start if AUTH_SECRET matches the placeholder below,
+# so you will get a clear error rather than a silently insecure deployment.
+
 services:
   app:
     build: .
@@ -16,9 +31,11 @@ services:
       - "5000:5000"
     environment:
       - MONGODB_URI=mongodb://mongo:27017/kanpur_lab
-      - AUTH_SECRET=your-secure-secret-here
+      # CHANGE THIS before running. See note above.
+      - AUTH_SECRET=REPLACE-THIS-WITH-A-REAL-64-CHAR-RANDOM-SECRET-DO-NOT-USE-AS-IS
       - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=securepassword
+      # CHANGE THIS before running.
+      - ADMIN_PASSWORD=REPLACE-WITH-STRONG-PASSWORD
     depends_on:
       - mongo
 

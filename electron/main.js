@@ -40,8 +40,10 @@ function loadOrCreateEnv() {
   if (!fs.existsSync(envPath)) {
     const secret = crypto.randomBytes(48).toString('hex')
     const contents = [
+      `# Auto-generated on first launch. See README.md for setup instructions.`,
       `AUTH_SECRET=${secret}`,
       `ADMIN_USERNAME=admin`,
+      `# IMPORTANT: Change from 'admin123' to a strong password before production use.`,
       `ADMIN_PASSWORD=admin123`,
       `PORT=5000`,
       `MONGODB_URI=mongodb://127.0.0.1:27017/kanpur_lab`,

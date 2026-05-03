@@ -80,18 +80,30 @@ npm run server:install
 copy server\.env.example server\.env
 ```
 
-4. Update `server/.env` if needed.
+4. Generate a secure AUTH_SECRET for the backend:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Then update `server/.env` with the generated secret and change the default admin password:
 
 ```text
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/kanpur_lab
 CLIENT_ORIGIN=http://localhost:3000
-AUTH_SECRET=replace-with-a-long-random-secret
+AUTH_SECRET=<paste-generated-secret-here>
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=<change-to-strong-password>
 ```
 
-5. Start MongoDB.
+5. (Optional) Create `.env` in the root directory if using environment variables during React build:
+
+```text
+REACT_APP_API_URL=http://localhost:5000
+```
+
+6. Start MongoDB.
 
 6. Start the backend.
 
