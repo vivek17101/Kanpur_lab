@@ -295,6 +295,12 @@ function SelectOrCustomField({
   const isCustomMode = isAddingCustom || isCustomValue;
   const selectValue = isCustomMode ? '__custom' : value;
 
+  useEffect(() => {
+    if (!value || isKnownOption) {
+      setIsAddingCustom(false);
+    }
+  }, [isKnownOption, value]);
+
   return (
     <label className={styles.field}>
       <span>{label}</span>
