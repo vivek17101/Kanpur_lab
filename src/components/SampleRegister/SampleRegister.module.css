@@ -58,14 +58,28 @@
   font-weight: 800;
 }
 
-.statCard--total  { border-left-color: #0a132b; }
-.statCard--pending { border-left-color: #f59e0b; }
-.statCard--tested  { border-left-color: #0ea5e9; }
-.statCard--reported { border-left-color: #22c55e; }
+.statCard--total {
+  border-left-color: #0a132b;
+}
+.statCard--pending {
+  border-left-color: #f59e0b;
+}
+.statCard--tested {
+  border-left-color: #0ea5e9;
+}
+.statCard--reported {
+  border-left-color: #22c55e;
+}
 
-.statCard--pending strong { color: #92400e; }
-.statCard--tested  strong { color: #075985; }
-.statCard--reported strong { color: #166534; }
+.statCard--pending strong {
+  color: #92400e;
+}
+.statCard--tested strong {
+  color: #075985;
+}
+.statCard--reported strong {
+  color: #166534;
+}
 
 .panelHeader {
   display: flex;
@@ -113,7 +127,8 @@
   gap: 6px;
 }
 
-.field label {
+.field label,
+.field span {
   color: #334155;
   font-size: 13px;
   font-weight: 700;
@@ -126,8 +141,14 @@
   padding: 10px 12px;
   color: #0f172a;
   background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #94a3b8;
   border-radius: 6px;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #0a132b;
+  box-shadow: 0 0 0 3px rgba(10, 19, 43, 0.1);
 }
 
 .filterButton {
@@ -182,7 +203,8 @@
   border-color: #334155;
 }
 
-:global(.dark) .field label {
+:global(.dark) .field label,
+:global(.dark) .field span {
   color: #cbd5e1;
 }
 
@@ -190,7 +212,13 @@
 :global(.dark) .field select {
   background: #111827;
   color: #f8fafc;
-  border-color: #334155;
+  border-color: #475569;
+}
+
+:global(.dark) .field input:focus,
+:global(.dark) .field select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
 }
 
 :global(.dark) .tableWrapper {
