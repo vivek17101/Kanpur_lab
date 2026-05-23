@@ -6,6 +6,9 @@ const fs = require('fs')
 const crypto = require('crypto')
 
 let serverProcess, mainWindow, loadingWindow
+const appIconPath = getAppIconPath()
+
+app.setAppUserModelId('com.kanpur.kanpur_lab')
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
@@ -32,6 +35,14 @@ function getEnvPath() {
     return path.join(app.getPath('userData'), 'server.env')
   }
   return path.join(__dirname, '..', 'server', '.env')
+}
+
+function getAppIconPath() {
+  const candidates = [
+    path.join(__dirname, '../build/KanpurLab_AppLogo.ico'),
+    path.join(__dirname, '../public/KanpurLab_AppLogo.ico'),
+  ]
+  return candidates.find(iconPath => fs.existsSync(iconPath)) || candidates[0]
 }
 
 function loadOrCreateEnv() {
@@ -166,6 +177,7 @@ function createLoadingWindow() {
   loadingWindow = new BrowserWindow({
     width: 420, height: 280, frame: false,
     resizable: false, center: true, alwaysOnTop: true,
+    icon: appIconPath,
     webPreferences: { nodeIntegration: true, contextIsolation: false }
   })
   loadingWindow.loadURL('data:text/html,<html><body style="margin:0;background:%231a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:%23fff;"><div style="font-size:22px;font-weight:bold;margin-bottom:8px">Kanpur Laboratory</div><div style="font-size:13px;color:%23aaa;margin-bottom:24px">Starting services...</div><div id="s" style="font-size:12px;color:%237eb8f7;margin-bottom:20px;text-align:center;padding:0 20px">Initialising...</div><div style="width:260px;height:4px;background:%23333;border-radius:2px;overflow:hidden"><div id="b" style="height:100%;width:5%;background:%234a9eff;border-radius:2px;transition:width 0.4s ease"></div></div></body></html>')
@@ -275,7 +287,7 @@ async function startServer(envVars) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 800, show: false,
-    icon: path.join(__dirname, '../build/KanpurLab_AppLogo192.png'),
+    icon: appIconPath,
     webPreferences: { nodeIntegration: false }
   })
   mainWindow.loadFile(path.join(__dirname, '../build/index.html'))
