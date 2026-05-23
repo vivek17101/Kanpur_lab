@@ -1,6 +1,6 @@
 {
   "name": "lab-report",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Kanpur Laboratory desktop application",
   "author": "Kanpur Laboratory Team",
@@ -52,6 +52,9 @@
     ],
     "extraMetadata": {
       "main": "electron/main.js"
+    },
+    "win": {
+      "icon": "public/KanpurLab_AppLogo.ico"
     }
   },
   "eslintConfig": {

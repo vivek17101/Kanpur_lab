@@ -30,15 +30,90 @@ const SAMPLE_TYPES = [
   'Dal',
 ];
 
+function padDatePart(value) {
+  return String(value).padStart(2, '0');
+}
+
+function getTodayInputValue() {
+  const now = new Date();
+  return `${now.getFullYear()}-${padDatePart(now.getMonth() + 1)}-${padDatePart(now.getDate())}`;
+}
+
+function isValidDateParts(day, month, year) {
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return false;
+  }
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+function getFullYearFromEntry(value) {
+  if (value.length === 2) {
+    const year = Number(value);
+    return year >= 70 ? 1900 + year : 2000 + year;
+  }
+  return Number(value);
+}
+
+function parseManualDate(value, { allowShortYear = false } = {}) {
+  const raw = value.trim();
+  if (!raw) return '';
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, yearText, monthText, dayText] = isoMatch;
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    if (!isValidDateParts(day, month, year)) return null;
+    return `${year}-${padDatePart(month)}-${padDatePart(day)}`;
+  }
+
+  const compact = raw.replace(/\D/g, '');
+  let day;
+  let month;
+  let year;
+
+  if (compact.length === 8) {
+    day = Number(compact.slice(0, 2));
+    month = Number(compact.slice(2, 4));
+    year = Number(compact.slice(4, 8));
+  } else {
+    const parts = raw.split(/[./\-\s]+/).filter(Boolean);
+    if (parts.length !== 3) return null;
+
+    if (parts[0].length === 4) {
+      year = Number(parts[0]);
+      month = Number(parts[1]);
+      day = Number(parts[2]);
+    } else {
+      if (!allowShortYear && parts[2].length !== 4) return null;
+      day = Number(parts[0]);
+      month = Number(parts[1]);
+      year = getFullYearFromEntry(parts[2]);
+    }
+  }
+
+  if (!isValidDateParts(day, month, year)) return null;
+  return `${year}-${padDatePart(month)}-${padDatePart(day)}`;
+}
+
+function formatManualDate(value) {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+}
+
 function getEmptyForm() {
   return {
     sampleNo: '',
     supplierName: '',
     CO: '',
     toMs: '',
-    sampleReference: '',
+    sampleReference: 'Rice Bran',
     dateOfSeal: '',
-    dateReceived: new Date().toISOString().split('T')[0],
+    dateReceived: getTodayInputValue(),
     dateOfTest: '',
     lorryNo: '',
     bags: '',
@@ -143,6 +218,196 @@ function getNextActionLabel(status) {
   if (status === 'Pending') return 'Enter Results';
   if (status === 'Tested') return 'Generate Report';
   return 'View Report';
+}
+
+function DateField({ label, name, value, onChange, required = false }) {
+  const [manualValue, setManualValue] = useState(formatManualDate(value));
+  const [isInvalid, setIsInvalid] = useState(false);
+
+  useEffect(() => {
+    setManualValue(formatManualDate(value));
+    setIsInvalid(false);
+  }, [value]);
+
+  const setDateValue = (nextValue) => {
+    onChange({ target: { name, value: nextValue } });
+  };
+
+  const handleManualChange = (e) => {
+    const nextValue = e.target.value;
+    setManualValue(nextValue);
+
+    const parsed = parseManualDate(nextValue);
+    if (parsed !== null) {
+      setIsInvalid(false);
+      setDateValue(parsed);
+      return;
+    }
+
+    setIsInvalid(nextValue.trim().length >= 6);
+  };
+
+  const handleManualBlur = () => {
+    const parsed = parseManualDate(manualValue, { allowShortYear: true });
+    if (parsed === null) {
+      setManualValue(formatManualDate(value));
+      setIsInvalid(false);
+      return;
+    }
+
+    if (parsed) setDateValue(parsed);
+  };
+
+  return (
+    <label className={styles.field}>
+      <span>{label}</span>
+      <div className={styles.dateControl}>
+        <input type="date" name={name} value={value} onChange={onChange} required={required} />
+        <input
+          aria-label={`${label} manual entry`}
+          className={isInvalid ? styles.dateManualInvalid : ''}
+          inputMode="numeric"
+          placeholder="DD/MM/YYYY"
+          value={manualValue}
+          onBlur={handleManualBlur}
+          onChange={handleManualChange}
+        />
+        <button type="button" onClick={() => setDateValue(getTodayInputValue())}>
+          Today
+        </button>
+      </div>
+    </label>
+  );
+}
+
+function SelectOrCustomField({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  customPlaceholder,
+  required = false,
+}) {
+  const isKnownOption = options.includes(value);
+  const isCustomValue = Boolean(value && !isKnownOption);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const isCustomMode = isAddingCustom || isCustomValue;
+  const selectValue = isCustomMode ? '__custom' : value;
+
+  return (
+    <label className={styles.field}>
+      <span>{label}</span>
+      <select
+        name={name}
+        value={selectValue}
+        onChange={(e) => {
+          if (e.target.value === '__custom') {
+            setIsAddingCustom(true);
+            onChange({ target: { name, value: '' } });
+            return;
+          }
+          setIsAddingCustom(false);
+          onChange(e);
+        }}
+        required={required}
+      >
+        <option value="" disabled>
+          Select {label.toLowerCase()}
+        </option>
+        {options.map((option) => (
+          <option value={option} key={option}>
+            {option}
+          </option>
+        ))}
+        <option value="__custom">Custom...</option>
+      </select>
+      {isCustomMode && (
+        <input
+          name={name}
+          value={value}
+          onChange={(e) => {
+            setIsAddingCustom(true);
+            onChange(e);
+          }}
+          placeholder={customPlaceholder}
+          required={required}
+        />
+      )}
+    </label>
+  );
+}
+
+function FieldGroup({ fields, onChange, supplierOptions, sampleTypeOptions }) {
+  return (
+    <div className={styles.grid}>
+      <label className={styles.field}>
+        <span>Sample No.</span>
+        <input name="sampleNo" value={fields.sampleNo} onChange={onChange} />
+      </label>
+      <SelectOrCustomField
+        label="Supplier Name"
+        name="supplierName"
+        value={fields.supplierName}
+        onChange={onChange}
+        options={supplierOptions}
+        customPlaceholder="Enter supplier name"
+        required
+      />
+      <label className={styles.field}>
+        <span>C/o</span>
+        <input name="CO" value={fields.CO} onChange={onChange} />
+      </label>
+      <label className={styles.field}>
+        <span>To M/s</span>
+        <input name="toMs" value={fields.toMs} onChange={onChange} />
+      </label>
+      <SelectOrCustomField
+        label="Sample Type"
+        name="sampleReference"
+        value={fields.sampleReference}
+        onChange={onChange}
+        options={sampleTypeOptions}
+        customPlaceholder="Enter sample type"
+        required
+      />
+      <DateField
+        label="Date of Seal"
+        name="dateOfSeal"
+        value={fields.dateOfSeal}
+        onChange={onChange}
+      />
+      <DateField
+        label="Date Received"
+        name="dateReceived"
+        value={fields.dateReceived}
+        onChange={onChange}
+        required
+      />
+      <DateField
+        label="Date of Test"
+        name="dateOfTest"
+        value={fields.dateOfTest}
+        onChange={onChange}
+      />
+      <label className={styles.field}>
+        <span>Lorry No.</span>
+        <input name="lorryNo" value={fields.lorryNo} onChange={onChange} />
+      </label>
+      <label className={styles.field}>
+        <span>Bags</span>
+        <input name="bags" value={fields.bags} onChange={onChange} />
+      </label>
+      <label className={styles.field}>
+        <span>Weight</span>
+        <input name="weight" value={fields.weight} onChange={onChange} />
+      </label>
+      <label className={styles.field}>
+        <span>Condition of Sample</span>
+        <input name="conditionOfSample" value={fields.conditionOfSample} onChange={onChange} />
+      </label>
+    </div>
+  );
 }
 
 export default function SampleRegister({
@@ -484,78 +749,6 @@ export default function SampleRegister({
     await handleMarkReported();
   };
 
-  const FieldGroup = ({ fields, onChange }) => (
-    <div className={styles.grid}>
-      <label className={styles.field}>
-        <span>Sample No.</span>
-        <input name="sampleNo" value={fields.sampleNo} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Supplier Name</span>
-        <input
-          list="supplier-master-options"
-          name="supplierName"
-          value={fields.supplierName}
-          onChange={onChange}
-          required
-        />
-      </label>
-      <label className={styles.field}>
-        <span>C/o</span>
-        <input name="CO" value={fields.CO} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>To M/s</span>
-        <input name="toMs" value={fields.toMs} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Sample Type</span>
-        <input
-          list="sample-type-options"
-          name="sampleReference"
-          value={fields.sampleReference}
-          onChange={onChange}
-          placeholder="Select or type sample type"
-          required
-        />
-      </label>
-      <label className={styles.field}>
-        <span>Date of Seal</span>
-        <input type="date" name="dateOfSeal" value={fields.dateOfSeal} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Date Received</span>
-        <input
-          type="date"
-          name="dateReceived"
-          value={fields.dateReceived}
-          onChange={onChange}
-          required
-        />
-      </label>
-      <label className={styles.field}>
-        <span>Date of Test</span>
-        <input type="date" name="dateOfTest" value={fields.dateOfTest} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Lorry No.</span>
-        <input name="lorryNo" value={fields.lorryNo} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Bags</span>
-        <input name="bags" value={fields.bags} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Weight</span>
-        <input name="weight" value={fields.weight} onChange={onChange} />
-      </label>
-      <label className={styles.field}>
-        <span>Condition of Sample</span>
-        <input name="conditionOfSample" value={fields.conditionOfSample} onChange={onChange} />
-      </label>
-    </div>
-  );
-
   const Lifecycle = ({ status }) => {
     const steps = [
       { key: 'Pending', label: 'Received' },
@@ -591,13 +784,16 @@ export default function SampleRegister({
         <p className={styles.muted}>No activity recorded yet.</p>
       ) : (
         <ol>
-          {[...selectedActivity].reverse().slice(0, 6).map((item, index) => (
-            <li key={`${item.action}-${item.at}-${index}`}>
-              <strong>{item.action}</strong>
-              <span>{item.detail}</span>
-              <time>{formatDate(item.at)}</time>
-            </li>
-          ))}
+          {[...selectedActivity]
+            .reverse()
+            .slice(0, 6)
+            .map((item, index) => (
+              <li key={`${item.action}-${item.at}-${index}`}>
+                <strong>{item.action}</strong>
+                <span>{item.detail}</span>
+                <time>{formatDate(item.at)}</time>
+              </li>
+            ))}
         </ol>
       )}
     </div>
@@ -615,17 +811,6 @@ export default function SampleRegister({
         onConfirm={confirm.onConfirm}
         onCancel={dismissConfirm}
       />
-
-      <datalist id="supplier-master-options">
-        {supplierOptions.map((s) => (
-          <option value={s} key={s} />
-        ))}
-      </datalist>
-      <datalist id="sample-type-options">
-        {sampleTypeOptions.map((t) => (
-          <option value={t} key={t} />
-        ))}
-      </datalist>
 
       <section className={styles.toolbar}>
         <div>
@@ -681,6 +866,8 @@ export default function SampleRegister({
             <FieldGroup
               fields={form}
               onChange={(e) => setForm((c) => ({ ...c, [e.target.name]: e.target.value }))}
+              supplierOptions={supplierOptions}
+              sampleTypeOptions={sampleTypeOptions}
             />
             <div className={styles.actions}>
               <Button type="submit">
@@ -869,6 +1056,8 @@ export default function SampleRegister({
             <FieldGroup
               fields={sampleFields}
               onChange={(e) => setSampleFields((c) => ({ ...c, [e.target.name]: e.target.value }))}
+              supplierOptions={supplierOptions}
+              sampleTypeOptions={sampleTypeOptions}
             />
             <div className={styles.actions}>
               <Button variant="secondary" onClick={handleSaveSampleFields}>

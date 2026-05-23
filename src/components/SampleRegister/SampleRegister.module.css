@@ -151,6 +151,36 @@
   box-shadow: 0 0 0 3px rgba(10, 19, 43, 0.1);
 }
 
+.dateControl {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, 0.9fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.dateControl button {
+  min-height: 42px;
+  padding: 0 12px;
+  color: #0a132b;
+  font-size: 13px;
+  font-weight: 800;
+  background: #ffffff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dateControl button:hover,
+.dateControl button:focus {
+  border-color: #0a132b;
+  box-shadow: 0 0 0 3px rgba(10, 19, 43, 0.1);
+}
+
+.dateManualInvalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
 .filterButton {
   display: flex;
   align-items: flex-end;
@@ -217,6 +247,18 @@
 
 :global(.dark) .field input:focus,
 :global(.dark) .field select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+:global(.dark) .dateControl button {
+  color: #f8fafc;
+  background: #111827;
+  border-color: #475569;
+}
+
+:global(.dark) .dateControl button:hover,
+:global(.dark) .dateControl button:focus {
   border-color: #38bdf8;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
 }
@@ -497,6 +539,10 @@
   }
 
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dateControl {
     grid-template-columns: 1fr;
   }
 
